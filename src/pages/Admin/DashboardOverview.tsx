@@ -1,0 +1,253 @@
+import {
+	CheckCircle,
+	XCircle,
+	AlertTriangle,
+	FileText,
+	Users,
+	Zap,
+} from "lucide-react";
+
+interface DashboardOverviewProps {
+	setActiveTab: (tabId: string) => void;
+}
+
+export function DashboardOverview({ setActiveTab }: DashboardOverviewProps) {
+	const pendingApps = [
+		{
+			id: "1",
+			name: "Eduardo Reyes",
+			type: "Orthopedic Disability",
+			date: "Submitted Jun 18, 2025",
+		},
+		{
+			id: "2",
+			name: "Luzviminda Bautista",
+			type: "Visual Impairment",
+			date: "Submitted Jun 17, 2025",
+		},
+		{
+			id: "3",
+			name: "Ricardo Dela Cruz",
+			type: "Hearing Impairment",
+			date: "Submitted Jun 16, 2025",
+		},
+	];
+
+	const recentActivity = [
+		{
+			name: "Maria Santos",
+			id: "PWD-2024-001",
+			location: "Mercury Drug, Guagua • pharmacy_guagua_01",
+			time: "2:47 PM",
+			status: "VERIFIED",
+		},
+		{
+			name: "Roberto Dela Cruz",
+			id: "PWD-2024-002",
+			location: "Mercury Drug, Guagua • pharmacy_guagua_01",
+			time: "1:12 PM",
+			status: "VERIFIED",
+		},
+		{
+			name: "Unknown ID",
+			id: "???-????-???",
+			location: "Mercury Drug, Guagua • pharmacy_guagua_01",
+			time: "11:55 AM",
+			status: "FLAGGED",
+		},
+		{
+			name: "Ligaya Reyes",
+			id: "PWD-2024-034",
+			location: "Puregold, Guagua • puregold_guagua_03",
+			time: "10:30 AM",
+			status: "VERIFIED",
+		},
+		{
+			name: "Danilo Ocampo",
+			id: "PWD-2023-118",
+			location: "SM Supermarket, San Fernando • sm_sanfernando_02",
+			time: "4:01 PM",
+			status: "VERIFIED",
+		},
+	];
+
+	return (
+		<div className="space-y-6 animate-fadeIn font-Jakarta">
+			{/* Top Row Stat Summaries */}
+			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+				<div className="bg-white p-6 rounded-2xl border border-slate-200/60 shadow-xs flex items-start justify-between">
+					<div className="space-y-2">
+						<p className="text-xs font-bold text-muted-foreground/90 uppercase tracking-wide">
+							Total Registered PWDs
+						</p>
+						<h3 className="text-3xl font-bold font-Jakarta text-foreground">
+							3,916
+						</h3>
+						<p className="text-[11px] font-medium text-emerald-600">
+							+12 this week
+						</p>
+					</div>
+					<div className="p-2.5 bg-blue-50 text-primary rounded-xl">
+						<Users className="w-5 h-5" />
+					</div>
+				</div>
+
+				<div className="bg-white p-6 rounded-2xl border-2 border-amber-400 shadow-xs flex items-start justify-between relative overflow-hidden">
+					<div className="space-y-2">
+						<span className="absolute top-3 right-3 text-[9px] font-extrabold tracking-wider bg-amber-100 text-amber-700 px-2 py-0.5 rounded-sm uppercase">
+							Action Needed
+						</span>
+						<p className="text-xs font-bold text-muted-foreground/90 uppercase tracking-wide">
+							Pending Applications
+						</p>
+						<h3 className="text-3xl font-bold font-Jakarta text-foreground">
+							5
+						</h3>
+						<p className="text-[11px] font-medium text-slate-500">
+							Requires review
+						</p>
+					</div>
+					<div className="p-2.5 bg-amber-50 text-amber-500 rounded-xl mt-5">
+						<FileText className="w-5 h-5" />
+					</div>
+				</div>
+
+				<div className="bg-white p-6 rounded-2xl border border-slate-200/60 shadow-xs flex items-start justify-between">
+					<div className="space-y-2">
+						<p className="text-xs font-bold text-muted-foreground/90 uppercase tracking-wide">
+							Verifications Today
+						</p>
+						<h3 className="text-3xl font-bold font-Jakarta text-foreground">
+							47
+						</h3>
+						<p className="text-[11px] font-medium text-emerald-600">
+							+8 vs yesterday
+						</p>
+					</div>
+					<div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl">
+						<Zap className="w-5 h-5" />
+					</div>
+				</div>
+
+				<div className="bg-white p-6 rounded-2xl border border-slate-200/60 shadow-xs flex items-start justify-between">
+					<div className="space-y-2">
+						<p className="text-xs font-bold text-muted-foreground/90 uppercase tracking-wide">
+							Fraud Flags (Jun)
+						</p>
+						<h3 className="text-3xl font-bold font-Jakarta text-accent">3</h3>
+						<p className="text-[11px] font-medium text-muted-foreground">
+							Auto-reported to MSWDO
+						</p>
+					</div>
+					<div className="p-2.5 bg-rose-50 text-accent rounded-xl">
+						<AlertTriangle className="w-5 h-5" />
+					</div>
+				</div>
+			</div>
+
+			{/* Core Operational Section: Actions & Feed Lists */}
+			<div className="space-y-6">
+				{/* Pending Requests Actions Block */}
+				<div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
+					<div className="p-5 border-b border-slate-100 flex items-center justify-between">
+						<div className="flex items-center space-x-2">
+							<FileText className="w-4 h-4 text-amber-500" />
+							<h4 className="text-sm font-bold text-foreground">
+								Pending Applications
+							</h4>
+							<span className="text-[10px] font-extrabold px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full">
+								5 pending
+							</span>
+						</div>
+						<button
+							onClick={() => setActiveTab("applications")}
+							className="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer">
+							View all &rarr;
+						</button>
+					</div>
+					<div className="divide-y divide-slate-100">
+						{pendingApps.map((app) => (
+							<div
+								key={app.id}
+								className="p-4 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/50 transition">
+								<div>
+									<h5 className="text-sm font-bold text-foreground">
+										{app.name}
+									</h5>
+									<p className="text-xs text-muted-foreground mt-0.5">
+										{app.type} · {app.date}
+									</p>
+								</div>
+								<div className="flex items-center space-x-2 shrink-0">
+									<button className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg flex items-center gap-1 transition shadow-xs cursor-pointer">
+										<CheckCircle className="w-3.5 h-3.5" /> Approve
+									</button>
+									<button className="px-4 py-1.5 bg-white border border-rose-200 hover:bg-rose-50 text-accent text-xs font-bold rounded-lg flex items-center gap-1 transition cursor-pointer">
+										<XCircle className="w-3.5 h-3.5" /> Reject
+									</button>
+								</div>
+							</div>
+						))}
+					</div>
+				</div>
+
+				{/* Audit Scan Event Stream Summary */}
+				<div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
+					<div className="p-5 border-b border-slate-100 flex items-center justify-between">
+						<div className="flex items-center space-x-2">
+							<Zap className="w-4 h-4 text-primary" />
+							<h4 className="text-sm font-bold text-foreground">
+								Recent Verification Activity
+							</h4>
+						</div>
+						<button
+							onClick={() => setActiveTab("audit")}
+							className="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer">
+							View all logs &rarr;
+						</button>
+					</div>
+					<div className="divide-y divide-slate-100">
+						{recentActivity.map((activity, index) => (
+							<div
+								key={index}
+								className="p-4 sm:px-6 flex items-center justify-between gap-4 hover:bg-slate-50/50 transition">
+								<div className="flex items-start space-x-3">
+									<div
+										className={`p-2 rounded-full shrink-0 mt-0.5 ${activity.status === "VERIFIED" ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-accent"}`}>
+										{activity.status === "VERIFIED" ? (
+											<CheckCircle className="w-4 h-4" />
+										) : (
+											<AlertTriangle className="w-4 h-4" />
+										)}
+									</div>
+									<div>
+										<div className="flex flex-wrap items-center gap-x-2">
+											<h5 className="text-sm font-bold text-foreground">
+												{activity.name}
+											</h5>
+											<span className="text-[11px] font-DM font-semibold text-slate-500 tracking-wide">
+												({activity.id})
+											</span>
+										</div>
+										<p className="text-xs text-muted-foreground/80 font-medium mt-0.5">
+											{activity.location}
+										</p>
+									</div>
+								</div>
+								<div className="text-right shrink-0">
+									<p className="text-[11px] font-DM font-medium text-slate-500">
+										{activity.time}
+									</p>
+									<span
+										className={`text-[9px] font-extrabold tracking-wider block mt-1 ${activity.status === "VERIFIED" ? "text-emerald-600" : "text-accent"}`}>
+										{activity.status}
+									</span>
+								</div>
+							</div>
+						))}
+					</div>
+				</div>
+			</div>
+		</div>
+	);
+}
