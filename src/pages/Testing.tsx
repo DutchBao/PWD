@@ -121,7 +121,7 @@ export default function DocumentUploadPage() {
 					{/* File Drag & Drop Target Area */}
 					<div
 						onDragOver={handleDragOver}
-						onLeave={handleDragLeave}
+						onDragLeave={handleDragLeave}
 						onDrop={handleDrop}
 						onClick={triggerFileInput}
 						className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer transition-colors ${
@@ -179,7 +179,7 @@ export default function DocumentUploadPage() {
 										clipRule="evenodd"
 									/>
 								</svg>
-								<span className="truncate max-w-[250px]">{file.name}</span>
+								<span className="truncate max-w-62.5">{file.name}</span>
 							</div>
 						)}
 					</div>
