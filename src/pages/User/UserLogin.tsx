@@ -4,7 +4,12 @@ import { Link } from "react-router-dom";
 import { supabase } from "../../createClient";
 
 interface UserLoginProps {
-	onLoginSuccess?: (userData: { pwdNumber: string; fullName: string }) => void;
+	onLoginSuccess?: (userData: {
+		pwdNumber: string;
+		fullName: string;
+		mustChangePassword: boolean;
+		currentPassword: string;
+	}) => void;
 }
 
 export function UserLogin({ onLoginSuccess }: UserLoginProps) {
@@ -18,29 +23,23 @@ export function UserLogin({ onLoginSuccess }: UserLoginProps) {
 		setError("");
 		setLoading(true);
 
-		const { data, error: fetchError } = await supabase
-			.from("Users")
-			.select("UserName, password, FullName")
-			.ilike("UserName", pwdNumber)
-			.maybeSingle();
+		const { data, error: fnError } = await supabase.functions.invoke(
+			"login-user",
+			{ body: { userName: pwdNumber, password } },
+		);
 
 		setLoading(false);
 
-		if (fetchError) {
-			console.error(fetchError);
-			setError("Something went wrong. Please try again.");
-			return;
-		}
-
-		if (!data || data.password !== password) {
+		if (fnError || !data?.ok) {
 			setError("Invalid PWD ID number or password.");
-			console.log(data);
 			return;
 		}
 
 		onLoginSuccess?.({
-			pwdNumber: data.UserName,
-			fullName: data.FullName ?? "",
+			pwdNumber: data.userName,
+			fullName: data.fullName,
+			mustChangePassword: data.mustChangePassword,
+			currentPassword: password,
 		});
 	};
 

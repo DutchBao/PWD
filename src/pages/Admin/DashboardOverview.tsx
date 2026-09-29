@@ -9,18 +9,20 @@ interface DashboardOverviewProps {
 }
 
 export function DashboardOverview({ setActiveTab }: DashboardOverviewProps) {
-	{
-		/*Fetching data from supabase*/
-	}
-	const [ApplicationData, setApplicationData] = useState<Registration[]>([]);
+	const [PendingApplications, setPendingApplications] = useState<
+		Registration[]
+	>([]);
 	useEffect(() => {
 		const fetchData = async () => {
-			const { data, error } = await supabase.from("Registration").select("*");
+			const { data, error } = await supabase
+				.from("Registration")
+				.select("*")
+				.eq("status", "pending");
 
 			if (error) {
 				console.error("Error fetching registry data:", error);
 			} else {
-				setApplicationData(data ?? []);
+				setPendingApplications(data ?? []);
 			}
 		};
 
@@ -85,7 +87,6 @@ export function DashboardOverview({ setActiveTab }: DashboardOverviewProps) {
 
 	return (
 		<div className="space-y-6 animate-fadeIn font-Jakarta">
-			{/* Top Row Stat Summaries */}
 			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
 				<div className="bg-white p-6 rounded-2xl border border-slate-200/60 shadow-xs flex items-start justify-between">
 					<div className="space-y-2">
@@ -110,7 +111,7 @@ export function DashboardOverview({ setActiveTab }: DashboardOverviewProps) {
 							Pending Applications
 						</p>
 						<h3 className="text-3xl font-bold font-Jakarta text-foreground">
-							{ApplicationData.length}
+							{PendingApplications.length}
 						</h3>
 						<p className="text-[11px] font-medium text-slate-500">
 							Requires review
@@ -154,9 +155,7 @@ export function DashboardOverview({ setActiveTab }: DashboardOverviewProps) {
 				</div>
 			</div>
 
-			{/* Core Operational Section: Actions & Feed Lists */}
 			<div className="space-y-6">
-				{/* Pending Requests Actions Block */}
 				<div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
 					<div className="p-5 border-b border-slate-100 flex items-center justify-between">
 						<div className="flex items-center space-x-2">
@@ -165,7 +164,7 @@ export function DashboardOverview({ setActiveTab }: DashboardOverviewProps) {
 								Pending Applications
 							</h4>
 							<span className="text-[10px] font-extrabold px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full">
-								{ApplicationData.length} pending
+								{PendingApplications.length} pending
 							</span>
 						</div>
 						<button
@@ -175,24 +174,29 @@ export function DashboardOverview({ setActiveTab }: DashboardOverviewProps) {
 						</button>
 					</div>
 					<div className="divide-y divide-slate-100">
-						{ApplicationData.map((app) => (
-							<div
-								key={app.id}
-								className="p-4 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/50 transition">
-								<div>
-									<h5 className="text-sm font-bold text-foreground">
-										{app.firstName} {app.middleName} {app.lastName}
-									</h5>
-									<p className="text-xs text-muted-foreground mt-0.5">
-										{app.dissabilityProfile} · {app.createdAt}
-									</p>
-								</div>
+						{PendingApplications.length === 0 ? (
+							<div className="p-6 text-center text-xs text-slate-400">
+								No pending applications.
 							</div>
-						))}
+						) : (
+							PendingApplications.map((app) => (
+								<div
+									key={app.id}
+									className="p-4 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/50 transition">
+									<div>
+										<h5 className="text-sm font-bold text-foreground">
+											{app.firstName} {app.middleName} {app.lastName}
+										</h5>
+										<p className="text-xs text-muted-foreground mt-0.5">
+											{app.dissabilityProfile} · {app.createdAt}
+										</p>
+									</div>
+								</div>
+							))
+						)}
 					</div>
 				</div>
 
-				{/* Audit Scan Event Stream Summary */}
 				<div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
 					<div className="p-5 border-b border-slate-100 flex items-center justify-between">
 						<div className="flex items-center space-x-2">

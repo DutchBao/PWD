@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "../../createClient";
 import {
 	User,
 	Eye,
@@ -15,9 +16,6 @@ import {
 interface DigitalIdUser {
 	pwdNumber: string;
 	fullName: string;
-	disabilityType?: string;
-	address?: string;
-	validUntil?: string;
 }
 
 interface UserPortalProps {
@@ -25,15 +23,64 @@ interface UserPortalProps {
 	onLogout: () => void;
 }
 
+interface PwdRecord {
+	disabilityProfile: string | null;
+	homeAddress: string | null;
+	expiration_date: string | null;
+	Status: string | null;
+	qr_path: string | null;
+}
+
 export function DigitalIdView({ user, onLogout }: UserPortalProps) {
 	const [isBenefitsOpen, setIsBenefitsOpen] = useState(false);
+	const [record, setRecord] = useState<PwdRecord | null>(null);
+	const [qrUrl, setQrUrl] = useState<string | null>(null);
+	const [loading, setLoading] = useState(true);
+
+	useEffect(() => {
+		const fetchRecord = async () => {
+			setLoading(true);
+
+			const { data, error } = await supabase
+				.from("PWDinformation")
+				.select(
+					"disabilityProfile, homeAddress, expiration_date, Status, qr_path",
+				)
+				.eq("pwdNum", user.pwdNumber)
+				.maybeSingle();
+
+			if (error) {
+				console.error("Error fetching PWD record:", error);
+				setLoading(false);
+				return;
+			}
+
+			setRecord(data);
+
+			if (data?.qr_path) {
+				const { data: signed, error: signedError } = await supabase.storage
+					.from("QR-Codes")
+					.createSignedUrl(data.qr_path, 3600); // 1 hour
+
+				if (signedError) {
+					console.error("Error signing QR URL:", signedError);
+				} else {
+					setQrUrl(signed.signedUrl);
+				}
+			}
+
+			setLoading(false);
+		};
+
+		fetchRecord();
+	}, [user.pwdNumber]);
+
+	const isActive = record?.Status === "ACTIVE";
 
 	return (
 		<div className="min-h-screen bg-[#f1f5f9] flex flex-col font-Jakarta text-slate-800 antialiased relative">
-			{/* Main Content Card Container */}
 			<main className="flex-1 flex items-center justify-center p-4 my-6">
 				<div className="w-full max-w-md bg-white border border-slate-200/80 rounded-3xl shadow-xl overflow-hidden p-6 space-y-5">
-					{/* Card Top Label & Active Status Badge */}
 					<div className="flex justify-between items-center pb-2 border-b border-slate-100">
 						<div className="flex items-center space-x-2">
 							<div className="p-1.5 bg-blue-50 text-blue-600 rounded-lg">
@@ -48,13 +95,21 @@ export function DigitalIdView({ user, onLogout }: UserPortalProps) {
 								</p>
 							</div>
 						</div>
-						<span className="inline-flex items-center space-x-1 bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border border-emerald-200">
-							<span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-							<span>ACTIVE</span>
+						<span
+							className={`inline-flex items-center space-x-1 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${
+								isActive
+									? "bg-emerald-100 text-emerald-800 border-emerald-200"
+									: "bg-slate-100 text-slate-600 border-slate-200"
+							}`}>
+							<span
+								className={`w-1.5 h-1.5 rounded-full ${
+									isActive ? "bg-emerald-500 animate-pulse" : "bg-slate-400"
+								}`}
+							/>
+							<span>{loading ? "..." : (record?.Status ?? "UNKNOWN")}</span>
 						</span>
 					</div>
 
-					{/* User Profile Information */}
 					<div className="flex items-start space-x-4 pt-1">
 						<div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center shrink-0 border border-blue-100">
 							<User className="w-6 h-6" />
@@ -70,18 +125,26 @@ export function DigitalIdView({ user, onLogout }: UserPortalProps) {
 							<div className="space-y-1 pt-1.5 text-xs text-slate-600 font-medium">
 								<div className="flex items-center space-x-2">
 									<Eye className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-									<span>{user.disabilityType ?? "Not specified"}</span>
+									<span>
+										{loading
+											? "Loading..."
+											: (record?.disabilityProfile ?? "Not specified")}
+									</span>
 								</div>
 								<div className="flex items-center space-x-2">
 									<MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-									<span>{user.address ?? "Not specified"}</span>
+									<span>
+										{loading
+											? "Loading..."
+											: (record?.homeAddress ?? "Not specified")}
+									</span>
 								</div>
 								<div className="flex items-center space-x-2">
 									<Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
 									<span>
 										Valid until{" "}
 										<strong className="text-slate-800 font-bold">
-											{user.validUntil ?? "N/A"}
+											{loading ? "..." : (record?.expiration_date ?? "N/A")}
 										</strong>
 									</span>
 								</div>
@@ -89,7 +152,6 @@ export function DigitalIdView({ user, onLogout }: UserPortalProps) {
 						</div>
 					</div>
 
-					{/* Encrypted QR Code Card Box */}
 					<div className="bg-[#f8fafc] border border-slate-200/60 rounded-2xl p-4 text-center space-y-3">
 						<div className="bg-[#0038a8] text-white py-1.5 px-3 rounded-lg inline-block w-full">
 							<p className="text-[10px] font-extrabold tracking-widest uppercase">
@@ -101,23 +163,23 @@ export function DigitalIdView({ user, onLogout }: UserPortalProps) {
 							</p>
 						</div>
 
-						{/* QR Code Placeholder Graphic */}
-						<div className="bg-white p-4 rounded-xl border border-slate-200 inline-block shadow-xs">
-							<img
-								src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=enc_${encodeURIComponent(
-									user.pwdNumber,
-								)}`}
-								alt="PWD Encrypted QR Code"
-								className="w-44 h-44 mx-auto object-contain"
-							/>
+						<div className="bg-white p-4 rounded-xl border border-slate-200 inline-flex items-center justify-center shadow-xs min-h-48 min-w-48">
+							{loading ? (
+								<p className="text-xs text-slate-400">Loading QR code...</p>
+							) : qrUrl ? (
+								<img
+									src={qrUrl}
+									alt="PWD Encrypted QR Code"
+									className="w-44 h-44 mx-auto object-contain"
+								/>
+							) : (
+								<p className="text-xs text-slate-400 px-4">
+									QR code not available yet. Contact MSWDO if this persists.
+								</p>
+							)}
 						</div>
-
-						<p className="text-[10px] font-mono text-slate-400 font-semibold tracking-wider">
-							enc_{user.pwdNumber}
-						</p>
 					</div>
 
-					{/* Discount Eligibility Banner */}
 					<div className="bg-emerald-50/60 border border-emerald-200 rounded-2xl p-3.5 flex items-center space-x-3">
 						<div className="p-1.5 bg-emerald-100 text-emerald-700 rounded-lg shrink-0">
 							<Star className="w-4 h-4 fill-emerald-600 text-emerald-600" />
@@ -132,7 +194,6 @@ export function DigitalIdView({ user, onLogout }: UserPortalProps) {
 						</div>
 					</div>
 
-					{/* Benefits Accordion Dropdown */}
 					<div className="border border-slate-200 rounded-2xl overflow-hidden">
 						<button
 							type="button"
@@ -147,7 +208,7 @@ export function DigitalIdView({ user, onLogout }: UserPortalProps) {
 										AYUDA / Benefits Log
 									</p>
 									<p className="text-[10px] font-medium text-slate-500 leading-tight mt-0.5">
-										4 transactions recorded
+										Coming soon
 									</p>
 								</div>
 							</div>
@@ -159,36 +220,12 @@ export function DigitalIdView({ user, onLogout }: UserPortalProps) {
 						</button>
 
 						{isBenefitsOpen && (
-							<div className="p-3 bg-white border-t border-slate-200 divide-y divide-slate-100 text-xs">
-								<div className="py-2 flex justify-between">
-									<span className="font-semibold text-slate-700">
-										Financial Assistance
-									</span>
-									<span className="text-slate-500 font-mono">2026-01-10</span>
-								</div>
-								<div className="py-2 flex justify-between">
-									<span className="font-semibold text-slate-700">
-										Grocery Allowance
-									</span>
-									<span className="text-slate-500 font-mono">2025-12-15</span>
-								</div>
-								<div className="py-2 flex justify-between">
-									<span className="font-semibold text-slate-700">
-										Medical Subsidy
-									</span>
-									<span className="text-slate-500 font-mono">2025-10-20</span>
-								</div>
-								<div className="py-2 flex justify-between">
-									<span className="font-semibold text-slate-700">
-										Rice Distribution
-									</span>
-									<span className="text-slate-500 font-mono">2025-08-05</span>
-								</div>
+							<div className="p-4 bg-white border-t border-slate-200 text-xs text-slate-500 text-center">
+								Benefits tracking is not yet available.
 							</div>
 						)}
 					</div>
 
-					{/* Remove ID Button */}
 					<button
 						type="button"
 						onClick={onLogout}
@@ -199,7 +236,6 @@ export function DigitalIdView({ user, onLogout }: UserPortalProps) {
 				</div>
 			</main>
 
-			{/* Footer Banner */}
 			<footer className="w-full bg-[#071330] text-white/70 text-[10px] py-3 text-center space-y-0.5 mt-auto">
 				<p className="font-semibold">
 					Office for Persons with Disabilities Affairs — Guagua, Pampanga
@@ -209,7 +245,6 @@ export function DigitalIdView({ user, onLogout }: UserPortalProps) {
 				</p>
 			</footer>
 
-			{/* Floating Help Action Button */}
 			<button
 				type="button"
 				className="fixed bottom-4 right-4 bg-slate-800 text-white p-2.5 rounded-full shadow-lg hover:bg-slate-700 transition-colors cursor-pointer">

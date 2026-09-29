@@ -1,27 +1,64 @@
 import React, { useState } from "react";
 import { Camera } from "lucide-react";
+import { supabase } from "./createMerchantClient.ts";
+
+export interface MerchantUser {
+	authId: string;
+	username: string;
+	establishmentName: string;
+}
 
 interface MerchantLoginProps {
-	onLoginSuccess: () => void;
+	onLoginSuccess: (userData: MerchantUser) => void;
 }
 
 export function MerchantLogin({ onLoginSuccess }: MerchantLoginProps) {
-	const [username, setUsername] = useState("");
+	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
+	const [error, setError] = useState("");
+	const [loading, setLoading] = useState(false);
 
-	const handleSubmit = (e: React.FormEvent) => {
+	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		onLoginSuccess();
+		setError("");
+		setLoading(true);
+
+		const { data: authData, error: authError } =
+			await supabase.auth.signInWithPassword({ email, password });
+
+		if (authError || !authData.user) {
+			setLoading(false);
+			setError("Invalid email or password.");
+			return;
+		}
+
+		const { data: profile, error: profileError } = await supabase
+			.from("merchants")
+			.select("username, establishment_name")
+			.eq("auth_id", authData.user.id)
+			.maybeSingle();
+
+		if (profileError || !profile) {
+			await supabase.auth.signOut();
+			setLoading(false);
+			setError("This account is not authorized for the merchant portal.");
+			return;
+		}
+
+		setLoading(false);
+		onLoginSuccess({
+			authId: authData.user.id,
+			username: profile.username,
+			establishmentName: profile.establishment_name ?? "",
+		});
 	};
 
 	return (
 		<div className="w-full flex flex-col items-center justify-center pt-24 pb-12 px-4 animate-fadeIn">
-			{/* Centered Decorative Floating App Emblem Icon */}
 			<div className="w-14 h-14 bg-primary text-white rounded-2xl flex items-center justify-center shadow-md mb-5 transform transition hover:scale-105">
 				<Camera className="w-6 h-6" />
 			</div>
 
-			{/* Main Typography Header Section */}
 			<div className="text-center space-y-2 mb-8">
 				<h2 className="text-3xl font-Libre font-bold tracking-tight text-foreground">
 					Merchant / Verifier Portal
@@ -31,25 +68,22 @@ export function MerchantLogin({ onLoginSuccess }: MerchantLoginProps) {
 				</p>
 			</div>
 
-			{/* Form Interaction Card Block Container */}
 			<div className="w-full max-w-md bg-card border border-border-hairline rounded-3xl shadow-xl p-8 md:p-10 space-y-6">
 				<form onSubmit={handleSubmit} className="space-y-5">
-					{/* Username Data Field Input */}
 					<div className="space-y-2">
 						<label className="text-sm font-bold text-foreground tracking-wide block">
-							Username
+							Email
 						</label>
 						<input
-							type="text"
+							type="email"
 							required
-							value={username}
-							onChange={(e) => setUsername(e.target.value)}
-							placeholder="e.g. pharmacy_guagua_01"
+							value={email}
+							onChange={(e) => setEmail(e.target.value)}
+							placeholder="e.g. pharmacy_guagua_01@store.ph"
 							className="w-full text-sm font-DM px-4 py-3 bg-input-background border border-border-hairline rounded-xl placeholder:text-muted-foreground/60 focus:outline-hidden focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
 						/>
 					</div>
 
-					{/* Password Data Field Input */}
 					<div className="space-y-2">
 						<label className="text-sm font-bold text-foreground tracking-wide block">
 							Password
@@ -64,29 +98,20 @@ export function MerchantLogin({ onLoginSuccess }: MerchantLoginProps) {
 						/>
 					</div>
 
-					{/* Submit Action Button Container */}
+					{error && (
+						<p className="text-xs font-semibold text-rose-600">{error}</p>
+					)}
+
 					<button
 						type="submit"
-						className="w-full bg-primary hover:bg-[#002d87] text-white font-bold py-3.5 rounded-xl text-sm transition-all shadow-md tracking-wide mt-2 active:scale-[0.99] cursor-pointer">
-						Sign In to Scanning Portal
+						disabled={loading}
+						className="w-full bg-primary hover:bg-[#002d87] text-white font-bold py-3.5 rounded-xl text-sm transition-all shadow-md tracking-wide mt-2 active:scale-[0.99] cursor-pointer disabled:opacity-60">
+						{loading ? "Checking..." : "Sign In to Scanning Portal"}
 					</button>
 				</form>
 
-				{/* Dynamic Help Metadata Footer Link */}
 				<p className="text-[11px] text-muted-foreground text-center pt-2">
 					Contact your MSWDO liaison officer for login assistance.
-				</p>
-			</div>
-
-			{/* Bottom Secondary Citizen Redirection Target Link */}
-			<div className="text-center mt-8">
-				<p className="text-sm text-muted-foreground">
-					Are you a PWD beneficiary?{" "}
-					<a
-						href="/view-id"
-						className="text-primary font-bold hover:underline inline-flex items-center gap-1 transition">
-						View your ID →
-					</a>
 				</p>
 			</div>
 		</div>

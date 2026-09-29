@@ -1,31 +1,34 @@
 import { useState } from "react";
 import { Header } from "../../components/Header";
-import { MerchantLogin } from "./MerchantLogin";
+import { MerchantLogin, type MerchantUser } from "./MerchantLogin";
 import { MerchantPage } from "./MerchantPage";
+import { supabase } from "./createMerchantClient";
 
 export function MerchantPortalController() {
-	const [isAuthenticated, setIsAuthenticated] = useState(false);
+	const [merchant, setMerchant] = useState<MerchantUser | null>(null);
+	const isAuthenticated = merchant !== null;
+
+	const handleLogout = async () => {
+		await supabase.auth.signOut();
+		setMerchant(null);
+	};
 
 	return (
 		<div className="min-h-screen bg-input-background text-foreground flex flex-col justify-between">
 			<Header
 				showHomeButton={!isAuthenticated}
-				Username={isAuthenticated ? "pharmacy_guagua_01" : undefined}
+				Username={isAuthenticated ? merchant.username : undefined}
 				establishmentName={
-					isAuthenticated ? "Mercury Drug — Guagua" : undefined
+					isAuthenticated ? merchant.establishmentName : undefined
 				}
-				onLogout={isAuthenticated ? () => setIsAuthenticated(false) : undefined}
+				onLogout={isAuthenticated ? handleLogout : undefined}
 			/>
 
 			<main className="flex-1 w-full flex items-center justify-center">
 				{!isAuthenticated ? (
-					<MerchantLogin onLoginSuccess={() => setIsAuthenticated(true)} />
+					<MerchantLogin onLoginSuccess={(userData) => setMerchant(userData)} />
 				) : (
-					<MerchantPage
-						onLogout={function (): void {
-							throw new Error("Function not implemented.");
-						}}
-					/>
+					<MerchantPage onLogout={handleLogout} />
 				)}
 			</main>
 		</div>

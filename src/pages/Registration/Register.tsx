@@ -15,6 +15,7 @@ export type RegistrationData = {
 	email: string;
 	disabilityType: string;
 	documentFile: File | null;
+	photoFile: File | null;
 };
 
 const initialData: RegistrationData = {
@@ -27,6 +28,7 @@ const initialData: RegistrationData = {
 	email: "",
 	disabilityType: "Visual Impairment",
 	documentFile: null,
+	photoFile: null,
 };
 
 export function Register() {
