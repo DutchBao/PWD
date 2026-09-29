@@ -1,3 +1,7 @@
+import { useState, useEffect } from "react";
+import { supabase } from "./createAdminClient";
+import type { PWDinformation } from "../../../database.types";
+
 import {
 	Search,
 	PlusCircle,
@@ -8,60 +12,48 @@ import {
 } from "lucide-react";
 
 export function PwdRegistry() {
-	const registryData = [
-		{
-			id: "PWD-2024-001",
-			name: "Maria Santos",
-			disability: "Visual Impairment",
-			barangay: "Brgy. San Nicolas",
-			validUntil: "Jan 15, 2026",
-			status: "ACTIVE",
-		},
-		{
-			id: "PWD-2024-002",
-			name: "Roberto Dela Cruz",
-			disability: "Orthopedic Disability",
-			barangay: "Brgy. Maquiapo",
-			validUntil: "Feb 3, 2026",
-			status: "ACTIVE",
-		},
-		{
-			id: "PWD-2024-034",
-			name: "Ligaya Reyes",
-			disability: "Hearing Impairment",
-			barangay: "Brgy. Betis",
-			validUntil: "Mar 8, 2026",
-			status: "ACTIVE",
-		},
-		{
-			id: "PWD-2023-118",
-			name: "Danilo Ocampo",
-			disability: "Speech and Language Impairment",
-			barangay: "Brgy. Ascomo",
-			validUntil: "Nov 20, 2025",
-			status: "ACTIVE",
-		},
-		{
-			id: "PWD-2024-055",
-			name: "Carmelita Navarro",
-			disability: "Chronic Illness",
-			barangay: "Brgy. Pulungmasle",
-			validUntil: "Apr 1, 2025",
-			status: "EXPIRED",
-		},
-		{
-			id: "PWD-2024-078",
-			name: "Simeon Lacson",
-			disability: "Mental / Psychosocial Disability",
-			barangay: "Brgy. San Vicente",
-			validUntil: "Jun 10, 2026",
-			status: "ACTIVE",
-		},
-	];
+	{
+		/*Fetching data from supabase*/
+	}
+	const [registryData, setRegistryData] = useState<PWDinformation[]>([]);
+	useEffect(() => {
+		const fetchData = async () => {
+			const { data, error } = await supabase.from("PWDinformation").select("*");
+
+			if (error) {
+				console.error("Error fetching registry data:", error);
+			} else {
+				setRegistryData(data ?? []);
+			}
+		};
+
+		fetchData();
+	}, []);
+
+	{
+		/* Fetching total count of records from supabase */
+	}
+
+	const [totalCount, setTotalCount] = useState<number | null>(null);
+
+	useEffect(() => {
+		const fetchCount = async () => {
+			const { count, error } = await supabase
+				.from("PWDinformation")
+				.select("*", { count: "exact", head: true });
+
+			if (error) {
+				console.error("Error fetching count:", error);
+			} else {
+				setTotalCount(count);
+			}
+		};
+
+		fetchCount();
+	}, []);
 
 	return (
 		<div className="space-y-4 font-Jakarta animate-fadeIn">
-			{/* Top Operational Utility Action Toolbar */}
 			<div className="w-full flex flex-col sm:flex-row gap-3 items-center justify-between">
 				<div className="relative w-full sm:max-w-xl">
 					<Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -85,7 +77,7 @@ export function PwdRegistry() {
 			<div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
 				<div className="px-5 py-3.5 border-b border-slate-100 bg-slate-50/50">
 					<span className="text-xs font-semibold text-slate-500 font-DM">
-						6 records found
+						{totalCount === null ? "Loading..." : `${totalCount} records found`}
 					</span>
 				</div>
 				<div className="overflow-x-auto">
@@ -103,22 +95,26 @@ export function PwdRegistry() {
 						</thead>
 						<tbody className="divide-y divide-slate-100 font-medium text-slate-700">
 							{registryData.map((row) => (
-								<tr key={row.id} className="hover:bg-slate-50/50 transition">
+								<tr
+									key={row.pwdNum}
+									className="hover:bg-slate-50/50 transition">
 									<td className="p-4 font-DM font-bold text-primary tracking-wide">
-										{row.id}
+										{row.pwdNum}
 									</td>
 									<td className="p-4 font-bold text-foreground text-sm">
-										{row.name}
+										{row.firstName} {row.lastName}
 									</td>
-									<td className="p-4 text-slate-500">{row.disability}</td>
-									<td className="p-4 text-slate-500">{row.barangay}</td>
+									<td className="p-4 text-slate-500">
+										{row.disabilityProfile}
+									</td>
+									<td className="p-4 text-slate-500">{row.homeAddress}</td>
 									<td className="p-4 font-DM text-slate-500">
-										{row.validUntil}
+										{row.expiration_date}
 									</td>
 									<td className="p-4">
 										<span
 											className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full ${row.status === "ACTIVE" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
-											● {row.status}
+											● {row.Status}
 										</span>
 									</td>
 									<td className="p-4">

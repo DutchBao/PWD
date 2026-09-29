@@ -1,42 +1,124 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Header } from "../../components/Header";
-import { AdminLogin } from "./AdminLogin";
+import { AdminLogin, type AdminUser } from "./AdminLogin";
 import { DashboardOverview } from "./DashboardOverview";
 import { ApplicationsWorkflow } from "./ApplicationsWorkflow";
 import { PwdRegistry } from "./PwdRegistry";
 import { VerificationAuditLogs } from "./VerificationAuditLogs";
 import { ReportsAnalytics } from "./ReportsAnalytics";
+import { supabase } from "./createAdminClient";
+import type { Session } from "@supabase/supabase-js";
 
-const TABS = [
-	{ id: "overview", label: "Overview", icon: "📊" },
-	{ id: "applications", label: "Applications (5)", icon: "📄" },
-	{ id: "registry", label: "PWD Registry", icon: "👥" },
-	{ id: "audit", label: "Audit Logs", icon: "⚡" },
-	{ id: "reports", label: "Reports", icon: "📈" },
-];
+const SESSION_KEY = "mswdo_admin_user";
+
+function loadStoredUser(): AdminUser | null {
+	try {
+		const raw = sessionStorage.getItem(SESSION_KEY);
+		return raw ? (JSON.parse(raw) as AdminUser) : null;
+	} catch {
+		return null;
+	}
+}
 
 export function AdminPortalController() {
-	const [isAuthenticated, setIsAuthenticated] = useState(false);
+	const [user, setUser] = useState<AdminUser | null>(loadStoredUser);
 	const [activeTab, setActiveTab] = useState("overview");
+	const [applicationCount, setApplicationCount] = useState<number | null>(null);
 
-	const handleLogout = () => {
-		setIsAuthenticated(false);
-		setActiveTab("overview");
+	const isAuthenticated = user !== null;
+
+	const handleLoginSuccess = (userData: AdminUser) => {
+		setUser(userData);
+		try {
+			sessionStorage.setItem(SESSION_KEY, JSON.stringify(userData));
+		} catch {
+			/* storage unavailable; login still works for this page load */
+		}
 	};
+
+	const handleLogout = async () => {
+		await supabase.auth.signOut();
+		setUser(null);
+		setActiveTab("overview");
+		setApplicationCount(null);
+		try {
+			sessionStorage.removeItem(SESSION_KEY);
+		} catch {
+			/* ignore */
+		}
+	};
+
+	useEffect(() => {
+		const verify = (session: Session | null) => {
+			const stored = loadStoredUser();
+			if (stored && (!session || session.user.id !== stored.authId)) {
+				try {
+					sessionStorage.removeItem(SESSION_KEY);
+				} catch {
+					/* ignore */
+				}
+				setUser(null);
+			}
+		};
+
+		supabase.auth.getSession().then(({ data }) => verify(data.session));
+
+		const { data: sub } = supabase.auth.onAuthStateChange((_event, session) =>
+			verify(session),
+		);
+		return () => sub.subscription.unsubscribe();
+	}, []);
+
+	// Only fetch once an admin is logged in
+	useEffect(() => {
+		if (!isAuthenticated) return;
+
+		const fetchCount = async () => {
+			const { count, error } = await supabase
+				.from("Registration")
+				.select("*", { count: "exact", head: true });
+
+			if (error) {
+				console.error("Error fetching count:", error);
+			} else {
+				setApplicationCount(count);
+			}
+		};
+
+		fetchCount();
+	}, [isAuthenticated]);
+
+	const TABS = [
+		{ id: "overview", label: "Overview", icon: "📊" },
+		{
+			id: "applications",
+			label:
+				applicationCount === null
+					? "Applications"
+					: `Applications (${applicationCount})`,
+			icon: "📄",
+		},
+		{ id: "registry", label: "PWD Registry", icon: "👥" },
+		{ id: "audit", label: "Audit Logs", icon: "⚡" },
+		{ id: "reports", label: "Reports", icon: "📈" },
+	];
 
 	return (
 		<div className="min-h-screen bg-input-background text-slate-800 flex flex-col font-Jakarta antialiased w-full">
-			{/* Reusing exact un-modified Header component */}
 			<Header
 				showHomeButton={!isAuthenticated}
-				merchantUsername={isAuthenticated ? "admin_mswdo_guagua" : undefined}
+				Username={
+					isAuthenticated
+						? `${user.UserName} : ${user.fullName || "Admin"}`
+						: undefined
+				}
 				establishmentName={isAuthenticated ? "MSWDO Administrator" : undefined}
 				onLogout={isAuthenticated ? handleLogout : undefined}
 			/>
 
 			{!isAuthenticated ? (
 				<div className="flex-1 flex items-center justify-center w-full">
-					<AdminLogin onLoginSuccess={() => setIsAuthenticated(true)} />
+					<AdminLogin onLoginSuccess={handleLoginSuccess} />
 				</div>
 			) : (
 				<>
@@ -65,9 +147,6 @@ export function AdminPortalController() {
 					</nav>
 
 					<div className="flex-1 w-full max-w-7xl mx-auto flex flex-col">
-						{/* Sub-Navigation Ribbon Bar (Matches image_8243d3.png) */}
-
-						{/* Core Panel Content Body Sheet Container */}
 						<main className="flex-1 p-6 lg:p-8 w-full">
 							{activeTab === "overview" && (
 								<DashboardOverview setActiveTab={setActiveTab} />

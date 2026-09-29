@@ -1,37 +1,49 @@
-import {
-	CheckCircle,
-	XCircle,
-	AlertTriangle,
-	FileText,
-	Users,
-	Zap,
-} from "lucide-react";
+import { supabase } from "./createAdminClient";
+import { useEffect, useState } from "react";
+import type { Registration } from "../../../database.types";
+
+import { CheckCircle, AlertTriangle, FileText, Users, Zap } from "lucide-react";
 
 interface DashboardOverviewProps {
 	setActiveTab: (tabId: string) => void;
 }
 
 export function DashboardOverview({ setActiveTab }: DashboardOverviewProps) {
-	const pendingApps = [
-		{
-			id: "1",
-			name: "Eduardo Reyes",
-			type: "Orthopedic Disability",
-			date: "Submitted Jun 18, 2025",
-		},
-		{
-			id: "2",
-			name: "Luzviminda Bautista",
-			type: "Visual Impairment",
-			date: "Submitted Jun 17, 2025",
-		},
-		{
-			id: "3",
-			name: "Ricardo Dela Cruz",
-			type: "Hearing Impairment",
-			date: "Submitted Jun 16, 2025",
-		},
-	];
+	{
+		/*Fetching data from supabase*/
+	}
+	const [ApplicationData, setApplicationData] = useState<Registration[]>([]);
+	useEffect(() => {
+		const fetchData = async () => {
+			const { data, error } = await supabase.from("Registration").select("*");
+
+			if (error) {
+				console.error("Error fetching registry data:", error);
+			} else {
+				setApplicationData(data ?? []);
+			}
+		};
+
+		fetchData();
+	}, []);
+
+	const [PWDCount, setPWDCount] = useState<number | null>(null);
+
+	useEffect(() => {
+		const fetchCount = async () => {
+			const { count, error } = await supabase
+				.from("PWDinformation")
+				.select("*", { count: "exact", head: true });
+
+			if (error) {
+				console.error("Error fetching count:", error);
+			} else {
+				setPWDCount(count);
+			}
+		};
+
+		fetchCount();
+	}, []);
 
 	const recentActivity = [
 		{
@@ -81,11 +93,8 @@ export function DashboardOverview({ setActiveTab }: DashboardOverviewProps) {
 							Total Registered PWDs
 						</p>
 						<h3 className="text-3xl font-bold font-Jakarta text-foreground">
-							3,916
+							{PWDCount !== null ? PWDCount.toLocaleString() : "Loading..."}
 						</h3>
-						<p className="text-[11px] font-medium text-emerald-600">
-							+12 this week
-						</p>
 					</div>
 					<div className="p-2.5 bg-blue-50 text-primary rounded-xl">
 						<Users className="w-5 h-5" />
@@ -101,7 +110,7 @@ export function DashboardOverview({ setActiveTab }: DashboardOverviewProps) {
 							Pending Applications
 						</p>
 						<h3 className="text-3xl font-bold font-Jakarta text-foreground">
-							5
+							{ApplicationData.length}
 						</h3>
 						<p className="text-[11px] font-medium text-slate-500">
 							Requires review
@@ -156,7 +165,7 @@ export function DashboardOverview({ setActiveTab }: DashboardOverviewProps) {
 								Pending Applications
 							</h4>
 							<span className="text-[10px] font-extrabold px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full">
-								5 pending
+								{ApplicationData.length} pending
 							</span>
 						</div>
 						<button
@@ -166,25 +175,17 @@ export function DashboardOverview({ setActiveTab }: DashboardOverviewProps) {
 						</button>
 					</div>
 					<div className="divide-y divide-slate-100">
-						{pendingApps.map((app) => (
+						{ApplicationData.map((app) => (
 							<div
 								key={app.id}
 								className="p-4 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/50 transition">
 								<div>
 									<h5 className="text-sm font-bold text-foreground">
-										{app.name}
+										{app.firstName} {app.middleName} {app.lastName}
 									</h5>
 									<p className="text-xs text-muted-foreground mt-0.5">
-										{app.type} · {app.date}
+										{app.dissabilityProfile} · {app.createdAt}
 									</p>
-								</div>
-								<div className="flex items-center space-x-2 shrink-0">
-									<button className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg flex items-center gap-1 transition shadow-xs cursor-pointer">
-										<CheckCircle className="w-3.5 h-3.5" /> Approve
-									</button>
-									<button className="px-4 py-1.5 bg-white border border-rose-200 hover:bg-rose-50 text-accent text-xs font-bold rounded-lg flex items-center gap-1 transition cursor-pointer">
-										<XCircle className="w-3.5 h-3.5" /> Reject
-									</button>
 								</div>
 							</div>
 						))}

@@ -2,7 +2,7 @@ interface HeaderProps {
 	showHomeButton?: boolean;
 	transparent?: boolean;
 	// Optional extensions for authenticated merchant layout views
-	merchantUsername?: string;
+	Username?: string;
 	establishmentName?: string;
 	onLogout?: () => void;
 }
@@ -10,7 +10,7 @@ interface HeaderProps {
 export function Header({
 	showHomeButton = false,
 	transparent = false,
-	merchantUsername,
+	Username,
 	establishmentName,
 	onLogout,
 }: HeaderProps) {
@@ -81,11 +81,11 @@ export function Header({
 				</div>
 
 				{/* Right Side Grouping layout area: Renders merchant data block if authenticated */}
-				{merchantUsername && onLogout && (
+				{Username && onLogout && (
 					<div className="flex items-center space-x-6 animate-fadeIn">
 						<div className="text-right hidden sm:block">
 							<p className="text-xs font-DM font-bold text-white leading-none">
-								{merchantUsername}
+								{Username}
 							</p>
 							<p className="text-[10px] text-white/70 mt-1 leading-none">
 								{establishmentName || "Authorized Verifier"}
@@ -95,7 +95,7 @@ export function Header({
 							type="button"
 							onClick={onLogout}
 							className="text-xs font-bold text-white/90 hover:text-white transition-colors underline underline-offset-4 focus:outline-hidden cursor-pointer">
-							Disconnect Station
+							Logout
 						</button>
 					</div>
 				)}

@@ -45,7 +45,7 @@ export function HomePage() {
 						{/* Interactive Portal Quick Access Action Row */}
 						{/* Core Yellow Application Button */}
 						<button
-							onClick={() => navigate("/Register-Personal-Information")}
+							onClick={() => navigate("/Register")}
 							className="px-5 py-3 bg-status-warning hover:bg-status-warning/90 text-foreground font-bold rounded-xl text-sm flex items-center space-x-2.5 transition-all shadow-md transform active:scale-98">
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -62,7 +62,28 @@ export function HomePage() {
 							</svg>
 							<span>Apply for Digital PWD ID</span>
 						</button>
+
 						<div className="pt-4 flex flex-wrap gap-4 items-center">
+							{/* User Portal */}
+							<button
+								onClick={() => navigate("/User")}
+								className="px-5 py-3 border border-white/20 hover:border-white/40 bg-white/5 hover:bg-white/10 text-white font-medium rounded-xl text-sm flex items-center space-x-2.5 transition-all active:scale-98">
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									className="h-4 w-4"
+									fill="none"
+									viewBox="0 0 24 24"
+									stroke="currentColor"
+									strokeWidth={2}>
+									<path
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										d="M15 19a6 6 0 00-12 0m9-10a3 3 0 11-6 0 3 3 0 016 0zm3-3v6m3-3h-6"
+									/>
+								</svg>
+								<span>User Portal</span>
+							</button>
+
 							{/* Secondary Merchant Portal Route */}
 							<button
 								onClick={() => navigate("/Merchant")}
@@ -249,10 +270,10 @@ export function HomePage() {
 				</div>
 			</section>
 
-			{/* --- HORIZONTAL QUANTITATIVE STATS BANNER --- */}
+			{/* Quantitative Stats */}
 			<section className="max-w-4xl mx-auto px-6 w-full mt-14">
 				<div className="bg-primary text-white rounded-2xl px-6 py-6 md:py-8 grid grid-cols-2 md:grid-cols-4 gap-y-6 gap-x-4 text-center shadow-md">
-					{/* Stat Item 1 */}
+					{/* Registered PWDs */}
 					<div className="border-r border-white/10 last:border-none md:odd:border-r">
 						<p className="text-2xl md:text-3xl font-bold tracking-tight">
 							3,196
@@ -261,7 +282,7 @@ export function HomePage() {
 							Registered PWDs
 						</p>
 					</div>
-					{/* Stat Item 2 */}
+					{/* Active Digital IDs */}
 					<div className="md:border-r border-white/10">
 						<p className="text-2xl md:text-3xl font-bold tracking-tight">
 							2,841
@@ -270,7 +291,7 @@ export function HomePage() {
 							Active Digital IDs
 						</p>
 					</div>
-					{/* Stat Item 3 */}
+					{/* Verifications */}
 					<div className="border-r border-white/10">
 						<p className="text-2xl md:text-3xl font-bold tracking-tight">
 							18,432
@@ -279,7 +300,7 @@ export function HomePage() {
 							Verifications (2025)
 						</p>
 					</div>
-					{/* Stat Item 4 */}
+					{/* Fraud Flags Stopped */}
 					<div>
 						<p className="text-2xl md:text-3xl font-bold tracking-tight">174</p>
 						<p className="text-[9px] uppercase tracking-wider text-white/70 font-medium mt-0.5">

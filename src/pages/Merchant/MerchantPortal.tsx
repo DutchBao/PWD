@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Header } from "../../components/Header";
 import { MerchantLogin } from "./MerchantLogin";
 import { MerchantPage } from "./MerchantPage";
@@ -8,10 +8,9 @@ export function MerchantPortalController() {
 
 	return (
 		<div className="min-h-screen bg-input-background text-foreground flex flex-col justify-between">
-			{/* Mounted exact component header instance layout */}
 			<Header
 				showHomeButton={!isAuthenticated}
-				merchantUsername={isAuthenticated ? "pharmacy_guagua_01" : undefined}
+				Username={isAuthenticated ? "pharmacy_guagua_01" : undefined}
 				establishmentName={
 					isAuthenticated ? "Mercury Drug — Guagua" : undefined
 				}
