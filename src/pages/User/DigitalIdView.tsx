@@ -29,25 +29,32 @@ interface PwdRecord {
 	expiration_date: string | null;
 	Status: string | null;
 	qr_path: string | null;
+	photo_path: string | null; // Make sure column name matches your database schema
 }
 
 export function DigitalIdView({ user, onLogout }: UserPortalProps) {
 	const [isBenefitsOpen, setIsBenefitsOpen] = useState(false);
 	const [record, setRecord] = useState<PwdRecord | null>(null);
 	const [qrUrl, setQrUrl] = useState<string | null>(null);
+	const [photoUrl, setPhotoUrl] = useState<string | null>(null);
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
+		let isMounted = true;
+
 		const fetchRecord = async () => {
 			setLoading(true);
 
+			// Fetch record including photo_path column
 			const { data, error } = await supabase
 				.from("PWDinformation")
 				.select(
-					"disabilityProfile, homeAddress, expiration_date, Status, qr_path",
+					"disabilityProfile, homeAddress, expiration_date, Status, qr_path, photo_path",
 				)
 				.eq("pwdNum", user.pwdNumber)
 				.maybeSingle();
+
+			if (!isMounted) return;
 
 			if (error) {
 				console.error("Error fetching PWD record:", error);
@@ -57,15 +64,25 @@ export function DigitalIdView({ user, onLogout }: UserPortalProps) {
 
 			setRecord(data);
 
+			// Fetch signed URL for QR Code
 			if (data?.qr_path) {
-				const { data: signed, error: signedError } = await supabase.storage
+				const { data: signedQr, error: qrError } = await supabase.storage
 					.from("QR-Codes")
-					.createSignedUrl(data.qr_path, 3600); // 1 hour
+					.createSignedUrl(data.qr_path, 3600);
 
-				if (signedError) {
-					console.error("Error signing QR URL:", signedError);
-				} else {
-					setQrUrl(signed.signedUrl);
+				if (!qrError && signedQr) {
+					setQrUrl(signedQr.signedUrl);
+				}
+			}
+
+			// Fetch signed URL or public URL for 1x1 Photo
+			if (data?.photo_path) {
+				const { data: signedPhoto, error: photoError } = await supabase.storage
+					.from("pwd-photos") // Replace with your exact bucket name
+					.createSignedUrl(data.photo_path, 3600);
+
+				if (!photoError && signedPhoto) {
+					setPhotoUrl(signedPhoto.signedUrl);
 				}
 			}
 
@@ -73,6 +90,10 @@ export function DigitalIdView({ user, onLogout }: UserPortalProps) {
 		};
 
 		fetchRecord();
+
+		return () => {
+			isMounted = false;
+		};
 	}, [user.pwdNumber]);
 
 	const isActive = record?.Status === "ACTIVE";
@@ -111,11 +132,23 @@ export function DigitalIdView({ user, onLogout }: UserPortalProps) {
 					</div>
 
 					<div className="flex items-start space-x-4 pt-1">
-						<div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center shrink-0 border border-blue-100">
-							<User className="w-6 h-6" />
+						{/* 1x1 Photo / Fallback Avatar */}
+						<div className="w-20 h-20 bg-slate-100 border border-slate-200 rounded-2xl overflow-hidden flex items-center justify-center shrink-0 shadow-xs">
+							{loading ? (
+								<div className="w-full h-full bg-slate-200 animate-pulse" />
+							) : photoUrl ? (
+								<img
+									src={photoUrl}
+									alt={user.fullName}
+									className="w-full h-full object-cover"
+								/>
+							) : (
+								<User className="w-8 h-8 text-slate-400" />
+							)}
 						</div>
-						<div className="space-y-1">
-							<h2 className="text-xl font-bold font-Libre text-slate-900 leading-tight">
+
+						<div className="space-y-1 flex-1 min-w-0">
+							<h2 className="text-lg font-bold font-Libre text-slate-900 leading-tight truncate">
 								{user.fullName}
 							</h2>
 							<p className="text-[10px] font-mono font-extrabold text-slate-500 tracking-wider">
@@ -125,7 +158,7 @@ export function DigitalIdView({ user, onLogout }: UserPortalProps) {
 							<div className="space-y-1 pt-1.5 text-xs text-slate-600 font-medium">
 								<div className="flex items-center space-x-2">
 									<Eye className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-									<span>
+									<span className="truncate">
 										{loading
 											? "Loading..."
 											: (record?.disabilityProfile ?? "Not specified")}
@@ -133,7 +166,7 @@ export function DigitalIdView({ user, onLogout }: UserPortalProps) {
 								</div>
 								<div className="flex items-center space-x-2">
 									<MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-									<span>
+									<span className="truncate">
 										{loading
 											? "Loading..."
 											: (record?.homeAddress ?? "Not specified")}

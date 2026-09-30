@@ -7,6 +7,7 @@ import {
 	AlertTriangle,
 	XCircle,
 	History,
+	User,
 } from "lucide-react";
 
 interface ScanRecord {
@@ -57,13 +58,14 @@ export function MerchantPage({ onLogout }: MerchantPageProps) {
 		pwdNumber?: string;
 		disabilityType?: string;
 		expirationDate?: string;
+		photo_path?: string;
+		photoUrl?: string;
 	} | null>(null);
 	const [scanHistory, setScanHistory] = useState<ScanRecord[]>([]);
 	const [busy, setBusy] = useState(false);
 	const scannerRef = useRef<Html5Qrcode | null>(null);
 	const handledRef = useRef(false);
 
-	// Moved above the useEffect that references it
 	const handleScan = useCallback(async (token: string) => {
 		setBusy(true);
 		setScanning(false);
@@ -72,15 +74,34 @@ export function MerchantPage({ onLogout }: MerchantPageProps) {
 			body: { token },
 		});
 
-		setBusy(false);
-
 		if (error || !data) {
 			console.error(error);
+			setBusy(false);
 			setLastResult({ result: "INVALID" });
 			return;
 		}
 
-		setLastResult(data);
+		let photoUrl: string | undefined = undefined;
+
+		// Fetch signed URL for the photo if photo_path is returned
+		const path = data.photo_path;
+		if (path) {
+			const { data: signedPhoto } = await supabase.storage
+				.from("pwd-photos")
+				.createSignedUrl(path, 3600);
+
+			if (signedPhoto) {
+				photoUrl = signedPhoto.signedUrl;
+			}
+		} else if (data.photoUrl) {
+			photoUrl = data.photoUrl;
+		}
+
+		setBusy(false);
+		setLastResult({
+			...data,
+			photoUrl,
+		});
 
 		setScanHistory((prev) => [
 			{
@@ -178,15 +199,29 @@ export function MerchantPage({ onLogout }: MerchantPageProps) {
 
 					{lastResult && !busy && (
 						<div
-							className={`aspect-4/3 border-2 rounded-xl p-6 flex flex-col items-center justify-center space-y-4 text-center animate-scaleUp ${resultStyles[lastResult.result].bg}`}>
-							<div
-								className={`w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-xs ${resultStyles[lastResult.result].text}`}>
-								{lastResult.result === "VERIFIED" ? (
-									<CheckCircle className="w-5 h-5" />
+							className={`min-h-96 border-2 rounded-xl p-6 flex flex-col items-center justify-center space-y-4 text-center animate-scaleUp ${resultStyles[lastResult.result].bg}`}>
+							{/* PWD Photo Preview or Status Icon */}
+							<div className="flex flex-col items-center gap-2">
+								{lastResult.photoUrl ? (
+									<div className="w-20 h-20 bg-slate-100 border-2 border-white rounded-2xl overflow-hidden shadow-sm flex items-center justify-center shrink-0">
+										<img
+											src={lastResult.photoUrl}
+											alt={lastResult.fullName || "PWD Photo"}
+											className="w-full h-full object-cover"
+										/>
+									</div>
+								) : lastResult.result === "VERIFIED" ? (
+									<div className="w-20 h-20 bg-emerald-100 border-2 border-white rounded-2xl flex items-center justify-center text-status-success shrink-0 shadow-sm">
+										<User className="w-10 h-10 text-emerald-600" />
+									</div>
 								) : (
-									<AlertTriangle className="w-5 h-5" />
+									<div
+										className={`w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-xs ${resultStyles[lastResult.result].text}`}>
+										<AlertTriangle className="w-5 h-5" />
+									</div>
 								)}
 							</div>
+
 							<div className="space-y-1">
 								<p
 									className={`text-[10px] tracking-wider font-extrabold uppercase ${resultStyles[lastResult.result].text}`}>
@@ -223,7 +258,7 @@ export function MerchantPage({ onLogout }: MerchantPageProps) {
 
 							<button
 								onClick={rescan}
-								className="text-[11px] font-bold text-muted-foreground hover:text-primary underline pt-1 focus:outline-hidden">
+								className="text-[11px] font-bold text-muted-foreground hover:text-primary underline pt-1 focus:outline-hidden cursor-pointer">
 								Scan Another
 							</button>
 						</div>
