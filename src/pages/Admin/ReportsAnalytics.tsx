@@ -1,86 +1,261 @@
+import { useEffect, useState } from "react";
+import { supabase } from "./createAdminClient";
+
+interface MonthBucket {
+	month: string;
+	verified: number;
+	flagged: number;
+	total: number;
+}
+
+interface DisabilitySlice {
+	label: string;
+	count: number;
+	pct: number;
+}
+
+const SLICE_COLORS = [
+	"#0c1b3a",
+	"#14254b",
+	"#1e325d",
+	"#283e6e",
+	"#344c80",
+	"#425c93",
+	"#5c74a8",
+	"#7d92c0",
+];
+
 export function ReportsAnalytics() {
+	const [monthly, setMonthly] = useState<MonthBucket[]>([]);
+	const [disability, setDisability] = useState<DisabilitySlice[]>([]);
+	const [metrics, setMetrics] = useState<{
+		totalScansMonth: number | null;
+		verifiedMonth: number | null;
+		flaggedMonth: number | null;
+		applicationsProcessedMonth: number | null;
+		activeIds: number | null;
+		expiredIds: number | null;
+		avgScansPerDay: number | null;
+		establishments: number | null;
+	}>({
+		totalScansMonth: null,
+		verifiedMonth: null,
+		flaggedMonth: null,
+		applicationsProcessedMonth: null,
+		activeIds: null,
+		expiredIds: null,
+		avgScansPerDay: null,
+		establishments: null,
+	});
+	const [loading, setLoading] = useState(true);
+
+	useEffect(() => {
+		const startOfMonth = new Date();
+		startOfMonth.setDate(1);
+		startOfMonth.setHours(0, 0, 0, 0);
+
+		const sixMonthsAgo = new Date(startOfMonth);
+		sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+
+		const today = new Date().toISOString().slice(0, 10);
+
+		const fetchAll = async () => {
+			// 1. Verification logs for the last 6 months, for the bar chart + monthly metrics
+			const { data: logs, error: logsError } = await supabase
+				.from("VerificationLogs")
+				.select("TimeStamp, Result")
+				.gte("TimeStamp", sixMonthsAgo.toISOString());
+
+			if (logsError) {
+				console.error("Error fetching verification logs:", logsError);
+			} else if (logs) {
+				const buckets = new Map<string, MonthBucket>();
+				for (let i = 0; i < 6; i++) {
+					const d = new Date(sixMonthsAgo);
+					d.setMonth(d.getMonth() + i);
+					const key = `${d.getFullYear()}-${d.getMonth()}`;
+					buckets.set(key, {
+						month: d.toLocaleString("en-US", { month: "short" }),
+						verified: 0,
+						flagged: 0,
+						total: 0,
+					});
+				}
+
+				for (const log of logs) {
+					const d = new Date(log.TimeStamp);
+					const key = `${d.getFullYear()}-${d.getMonth()}`;
+					const bucket = buckets.get(key);
+					if (!bucket) continue;
+					bucket.total += 1;
+					if (log.Result === "VERIFIED") bucket.verified += 1;
+					else bucket.flagged += 1;
+				}
+
+				setMonthly(Array.from(buckets.values()));
+
+				const thisMonthLogs = logs.filter(
+					(l) => new Date(l.TimeStamp) >= startOfMonth,
+				);
+				const totalScansMonth = thisMonthLogs.length;
+				const verifiedMonth = thisMonthLogs.filter(
+					(l) => l.Result === "VERIFIED",
+				).length;
+				const flaggedMonth = totalScansMonth - verifiedMonth;
+				const daysElapsed = Math.max(
+					1,
+					Math.ceil(
+						(Date.now() - startOfMonth.getTime()) / (1000 * 60 * 60 * 24),
+					),
+				);
+
+				setMetrics((prev) => ({
+					...prev,
+					totalScansMonth,
+					verifiedMonth,
+					flaggedMonth,
+					avgScansPerDay: Math.round((totalScansMonth / daysElapsed) * 10) / 10,
+				}));
+			}
+
+			// 2. Disability type distribution
+			const { data: pwds, error: pwdError } = await supabase
+				.from("PWDinformation")
+				.select("disabilityProfile, Status, expiration_date, created_at");
+
+			if (pwdError) {
+				console.error("Error fetching PWD records:", pwdError);
+			} else if (pwds) {
+				const counts = new Map<string, number>();
+				for (const row of pwds) {
+					const label = row.disabilityProfile ?? "Unspecified";
+					counts.set(label, (counts.get(label) ?? 0) + 1);
+				}
+				const total = pwds.length || 1;
+				const slices = Array.from(counts.entries())
+					.map(([label, count]) => ({
+						label,
+						count,
+						pct: Math.round((count / total) * 100),
+					}))
+					.sort((a, b) => b.count - a.count);
+				setDisability(slices);
+
+				const activeIds = pwds.filter((p) => p.Status === "ACTIVE").length;
+				const expiredIds = pwds.filter(
+					(p) => !!p.expiration_date && p.expiration_date < today,
+				).length;
+				const applicationsProcessedMonth = pwds.filter(
+					(p) => new Date(p.created_at) >= startOfMonth,
+				).length;
+
+				setMetrics((prev) => ({
+					...prev,
+					activeIds,
+					expiredIds,
+					applicationsProcessedMonth,
+				}));
+			}
+
+			// 3. Participating establishments
+			const { count: establishments, error: merchError } = await supabase
+				.from("merchants")
+				.select("*", { count: "exact", head: true });
+
+			if (merchError) {
+				console.error("Error fetching merchant count:", merchError);
+			} else {
+				setMetrics((prev) => ({ ...prev, establishments }));
+			}
+
+			setLoading(false);
+		};
+
+		fetchAll();
+	}, []);
+
+	const maxMonthlyTotal = Math.max(1, ...monthly.map((m) => m.total));
+
+	const conicGradient = (() => {
+		if (disability.length === 0) return "conic-gradient(#e2e8f0 0% 100%)";
+		let acc = 0;
+		const stops = disability.map((slice, i) => {
+			const start = acc;
+			acc += slice.pct;
+			const color = SLICE_COLORS[i % SLICE_COLORS.length];
+			return `${color} ${start}% ${acc}%`;
+		});
+		return `conic-gradient(${stops.join(", ")})`;
+	})();
+
+	const monthLabel = new Date().toLocaleString("en-US", { month: "long" });
+
 	const systemMetrics = [
-		{ label: "Total Scans (Jun)", value: "40", sub: "Total Scans (Jun)" },
 		{
-			label: "Successful Verifications",
-			value: "37",
-			sub: "Successful Verifications",
+			label: `Total Scans (${monthLabel.slice(0, 3)})`,
+			value: metrics.totalScansMonth,
 		},
-		{
-			label: "Fraud Flags Generated",
-			value: "3",
-			sub: "Fraud Flags Generated",
-		},
+		{ label: "Successful Verifications", value: metrics.verifiedMonth },
+		{ label: "Fraud Flags Generated", value: metrics.flaggedMonth },
 		{
 			label: "Applications Processed",
-			value: "12",
-			sub: "Applications Processed",
+			value: metrics.applicationsProcessedMonth,
 		},
-		{ label: "Active Digital IDs", value: "2,841", sub: "Active Digital IDs" },
-		{ label: "Expired IDs", value: "47", sub: "Expired IDs" },
-		{ label: "Avg. Scans / Day", value: "2.7", sub: "Avg. Scans / Day" },
-		{
-			label: "Participating Establishments",
-			value: "18",
-			sub: "Participating Establishments",
-		},
+		{ label: "Active Digital IDs", value: metrics.activeIds },
+		{ label: "Expired IDs", value: metrics.expiredIds },
+		{ label: "Avg. Scans / Day", value: metrics.avgScansPerDay },
+		{ label: "Participating Establishments", value: metrics.establishments },
 	];
 
 	return (
 		<div className="space-y-6 font-Jakarta animate-fadeIn">
-			{/* Charts Visual Analytics Grid Row */}
 			<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-				{/* Monthly Verification Bar Chart Panel */}
 				<div className="bg-white p-6 rounded-2xl border border-slate-200/60 shadow-sm space-y-4">
 					<div>
 						<h4 className="text-sm font-bold text-foreground">
 							Monthly Verification Activity
 						</h4>
 						<p className="text-[11px] text-muted-foreground font-medium">
-							Verified vs. unverified QR scan attempts (Jan – Jun 2025)
+							Verified vs. flagged QR scan attempts (last 6 months)
 						</p>
 					</div>
-					{/* Simulated High Fidelity Bar Graph Rendering Container */}
-					<div className="h-64 pt-6 flex items-end justify-between px-4 relative border-b border-slate-200">
-						{/* Horizontal Guides */}
-						<div className="absolute inset-x-0 top-6 border-t border-dashed border-slate-100 text-[10px] text-slate-300 font-DM pt-1">
-							100
+					{loading ? (
+						<div className="h-64 flex items-center justify-center text-xs text-slate-400">
+							Loading...
 						</div>
-						<div className="absolute inset-x-0 top-20 border-t border-dashed border-slate-100 text-[10px] text-slate-300 font-DM pt-1">
-							75
+					) : monthly.every((m) => m.total === 0) ? (
+						<div className="h-64 flex items-center justify-center text-xs text-slate-400">
+							No verification activity yet.
 						</div>
-						<div className="absolute inset-x-0 top-34 border-t border-dashed border-slate-100 text-[10px] text-slate-300 font-DM pt-1">
-							50
-						</div>
-						<div className="absolute inset-x-0 top-48 border-t border-dashed border-slate-100 text-[10px] text-slate-300 font-DM pt-1">
-							25
-						</div>
-						<div className="absolute inset-x-0 top-62 text-[10px] text-slate-300 font-DM z-10">
-							0
-						</div>
-
-						{/* Chart Bars */}
-						{[
-							{ month: "Jan", val: 48 },
-							{ month: "Feb", val: 62 },
-							{ month: "Mar", val: 55 },
-							{ month: "Apr", val: 72 },
-							{ month: "May", val: 84 },
-							{ month: "Jun", val: 38 },
-						].map((b, i) => (
-							<div
-								key={i}
-								className="flex flex-col items-center gap-2 z-10 w-full">
+					) : (
+						<div className="h-64 pt-6 flex items-end justify-between px-4 relative border-b border-slate-200">
+							{monthly.map((b, i) => (
 								<div
-									style={{ height: `${(b.val / 100) * 190}px` }}
-									className="w-4 bg-accent rounded-t-xs transition-all hover:opacity-90"
-								/>
-								<span className="text-[10px] font-medium text-slate-400 font-DM">
-									{b.month}
-								</span>
-							</div>
-						))}
-					</div>
+									key={i}
+									className="flex flex-col items-center gap-2 z-10 w-full">
+									<div
+										className="w-full flex flex-col items-center justify-end"
+										style={{ height: "190px" }}>
+										<div
+											style={{
+												height: `${(b.verified / maxMonthlyTotal) * 190}px`,
+											}}
+											className="w-4 bg-primary rounded-t-xs transition-all hover:opacity-90"
+										/>
+										<div
+											style={{
+												height: `${(b.flagged / maxMonthlyTotal) * 190}px`,
+											}}
+											className="w-4 bg-accent transition-all hover:opacity-90"
+										/>
+									</div>
+									<span className="text-[10px] font-medium text-slate-400 font-DM">
+										{b.month}
+									</span>
+								</div>
+							))}
+						</div>
+					)}
 					<div className="flex items-center space-x-4 text-[10px] font-bold text-slate-600 px-2 pt-1">
 						<div className="flex items-center gap-1.5">
 							<span className="w-3 h-1.5 bg-primary rounded-xs" /> Verified
@@ -91,7 +266,6 @@ export function ReportsAnalytics() {
 					</div>
 				</div>
 
-				{/* Disability Type Distribution Pie Panel */}
 				<div className="bg-white p-6 rounded-2xl border border-slate-200/60 shadow-sm space-y-4">
 					<div>
 						<h4 className="text-sm font-bold text-foreground">
@@ -101,41 +275,49 @@ export function ReportsAnalytics() {
 							Registered PWDs by disability category (Guagua)
 						</p>
 					</div>
-					<div className="h-64 flex items-center justify-center relative">
-						{/* CSS Conic Gradient Segment Chart Ring representation */}
-						<div
-							className="w-44 h-44 rounded-full shadow-inner relative flex items-center justify-center border-4 border-white"
-							style={{
-								background:
-									"conic-gradient(#0c1b3a 0% 28%, #14254b 28% 50%, #1e325d 50% 68%, #283e6e 68% 80%, #344c80 80% 90%, #425c93 90% 100%)",
-							}}>
-							{/* Overlay Percentage Data Tags */}
-							<span className="absolute top-6 right-6 text-[10px] font-extrabold text-white">
-								Orthopedic 28%
-							</span>
-							<span className="absolute top-8 left-4 text-[10px] font-extrabold text-white">
-								Visual 22%
-							</span>
-							<span className="absolute bottom-10 left-6 text-[10px] font-extrabold text-white">
-								Hearing 18%
-							</span>
-							<span className="absolute bottom-4 right-10 text-[10px] font-extrabold text-white">
-								Intellectual 12%
-							</span>
+					{loading ? (
+						<div className="h-64 flex items-center justify-center text-xs text-slate-400">
+							Loading...
 						</div>
-						<div className="absolute bottom-0 right-4 flex flex-col gap-1 text-[9px] font-bold text-slate-500">
-							<div>● Chronic Illness 10%</div>
-							<div>● Other 10%</div>
+					) : disability.length === 0 ? (
+						<div className="h-64 flex items-center justify-center text-xs text-slate-400">
+							No registered PWDs yet.
 						</div>
-					</div>
+					) : (
+						<div className="h-64 flex items-center justify-center gap-6">
+							<div
+								className="w-40 h-40 rounded-full shadow-inner shrink-0 border-4 border-white"
+								style={{ background: conicGradient }}
+							/>
+							<div className="space-y-1.5 text-[10px] font-bold text-slate-600 max-h-56 overflow-y-auto pr-1">
+								{disability.map((slice, i) => (
+									<div key={slice.label} className="flex items-center gap-1.5">
+										<span
+											className="w-2.5 h-2.5 rounded-sm shrink-0"
+											style={{
+												backgroundColor: SLICE_COLORS[i % SLICE_COLORS.length],
+											}}
+										/>
+										<span className="truncate max-w-32">{slice.label}</span>
+										<span className="text-slate-400 font-normal">
+											{slice.pct}%
+										</span>
+									</div>
+								))}
+							</div>
+						</div>
+					)}
 				</div>
 			</div>
 
-			{/* Bottom System Usage Metric Data Grid Row */}
 			<div className="bg-white p-6 rounded-3xl border border-slate-200/60 shadow-md space-y-5">
 				<div>
 					<h4 className="text-sm font-bold text-foreground">
-						System Usage Summary — June 2025
+						System Usage Summary —{" "}
+						{new Date().toLocaleString("en-US", {
+							month: "long",
+							year: "numeric",
+						})}
 					</h4>
 				</div>
 				<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
@@ -144,7 +326,7 @@ export function ReportsAnalytics() {
 							key={idx}
 							className="bg-white p-4 rounded-xl border border-slate-100 hover:shadow-xs transition space-y-1">
 							<h5 className="text-2xl font-bold text-foreground tracking-tight">
-								{m.value}
+								{loading || m.value === null ? "..." : m.value.toLocaleString()}
 							</h5>
 							<p className="text-[11px] font-medium text-muted-foreground/90">
 								{m.label}

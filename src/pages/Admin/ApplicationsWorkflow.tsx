@@ -105,7 +105,8 @@ export function ApplicationsWorkflow() {
 					</p>
 				</div>
 				<div className="text-right shrink-0 font-DM text-sm font-bold text-slate-700 bg-slate-50 px-4 py-1.5 rounded-xl border border-slate-100">
-					{ApplicationData.length} total
+					{ApplicationData.filter((app) => app.status === "pending").length}{" "}
+					pending
 				</div>
 			</div>
 
