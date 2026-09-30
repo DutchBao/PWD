@@ -95,19 +95,21 @@ export function ApplicationsWorkflow() {
 
 	const rejectApplication = async (id: number) => {
 		const confirmed = window.confirm(
-			"Reject this application? The applicant will not be notified automatically.",
+			"Reject this application? The applicant will be notified by email.",
 		);
 		if (!confirmed) return;
 
 		setRejectingId(id);
-		const { error } = await supabase
-			.from("Registration")
-			.update({ status: "rejected" })
-			.eq("id", id);
+		const { data, error } = await supabase.functions.invoke(
+			"reject-application",
+			{
+				body: { registrationId: id },
+			},
+		);
 		setRejectingId(null);
 
-		if (error) {
-			console.error("Error rejecting application:", error);
+		if (error || !data?.ok) {
+			console.error(error ?? data);
 			alert("Could not reject the application.");
 			return;
 		}
@@ -115,6 +117,10 @@ export function ApplicationsWorkflow() {
 		setApplicationData((prev) =>
 			prev.map((a) => (a.id === id ? { ...a, status: "rejected" } : a)),
 		);
+
+		if (!data.emailSent) {
+			alert("Rejected, but the notification email failed to send.");
+		}
 	};
 
 	return (
