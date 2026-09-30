@@ -22,7 +22,7 @@ export function DashboardOverview({
 	setActiveTab,
 	pendingApplications,
 }: DashboardOverviewProps) {
-	// ...rest of the component
+	// State for total registered PWDs
 	const [PWDCount, setPWDCount] = useState<number | null>(null);
 
 	useEffect(() => {
@@ -41,6 +41,7 @@ export function DashboardOverview({
 		fetchCount();
 	}, []);
 
+	// State for verifications today and yesterday
 	const [verificationsToday, setVerificationsToday] = useState<number | null>(
 		null,
 	);
@@ -77,6 +78,7 @@ export function DashboardOverview({
 		fetchTodayCount();
 	}, []);
 
+	// State for fraud flags this month
 	const [fraudFlagsThisMonth, setFraudFlagsThisMonth] = useState<number | null>(
 		null,
 	);
@@ -102,6 +104,7 @@ export function DashboardOverview({
 		fetchFraudCount();
 	}, []);
 
+	// State for recent verification activity
 	const [recentActivity, setRecentActivity] = useState<RecentLog[]>([]);
 	useEffect(() => {
 		const fetchRecent = async () => {
