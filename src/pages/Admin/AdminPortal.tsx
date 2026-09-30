@@ -5,6 +5,7 @@ import { DashboardOverview } from "./DashboardOverview";
 import { ApplicationsWorkflow } from "./ApplicationsWorkflow";
 import { PwdRegistry } from "./PwdRegistry";
 import { VerificationAuditLogs } from "./VerificationAuditLogs";
+import { StaffAccounts } from "./AdminAccounts";
 import { ReportsAnalytics } from "./ReportsAnalytics";
 import { supabase } from "../../lib/supabaseClient";
 import type { Session } from "@supabase/supabase-js";
@@ -123,6 +124,7 @@ export function AdminPortalController() {
 		},
 		{ id: "registry", label: "PWD Registry", icon: "👥" },
 		{ id: "audit", label: "Audit Logs", icon: "⚡" },
+		{ id: "staff", label: "Staff Accounts", icon: "🔑" },
 		{ id: "reports", label: "Reports", icon: "📈" },
 	];
 
@@ -182,6 +184,7 @@ export function AdminPortalController() {
 								<PwdRegistry pendingApplications={PendingApplications} />
 							)}
 							{activeTab === "audit" && <VerificationAuditLogs />}
+							{activeTab === "staff" && <StaffAccounts />}
 							{activeTab === "reports" && <ReportsAnalytics />}
 						</main>
 					</div>
