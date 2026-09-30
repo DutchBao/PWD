@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "./createAdminClient";
-import type { PWDinformation } from "../../../database.types";
+import type { PWDinformation, Registration } from "../../../database.types";
 
 import {
 	Search,
@@ -11,7 +11,11 @@ import {
 	RefreshCw,
 } from "lucide-react";
 
-export function PwdRegistry() {
+interface PwdRegistryProps {
+	pendingApplications: Registration[];
+}
+
+export function PwdRegistry({ pendingApplications }: PwdRegistryProps) {
 	const [registryData, setRegistryData] = useState<PWDinformation[]>([]);
 	useEffect(() => {
 		const fetchData = async () => {
@@ -66,6 +70,13 @@ export function PwdRegistry() {
 				</div>
 			</div>
 
+			{pendingApplications.length > 0 && (
+				<div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs font-bold text-amber-800">
+					{pendingApplications.length} application
+					{pendingApplications.length === 1 ? "" : "s"} still pending approval
+				</div>
+			)}
+
 			<div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
 				<div className="px-5 py-3.5 border-b border-slate-100 bg-slate-50/50">
 					<span className="text-xs font-semibold text-slate-500 font-DM">
@@ -105,7 +116,7 @@ export function PwdRegistry() {
 									</td>
 									<td className="p-4">
 										<span
-											className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full ${row.status === "ACTIVE" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
+											className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full ${row.Status === "ACTIVE" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
 											● {row.Status}
 										</span>
 									</td>

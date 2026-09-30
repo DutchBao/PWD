@@ -6,6 +6,7 @@ import { CheckCircle, AlertTriangle, FileText, Users, Zap } from "lucide-react";
 
 interface DashboardOverviewProps {
 	setActiveTab: (tabId: string) => void;
+	pendingApplications: Registration[];
 }
 
 interface RecentLog {
@@ -17,27 +18,11 @@ interface RecentLog {
 	Result: string;
 }
 
-export function DashboardOverview({ setActiveTab }: DashboardOverviewProps) {
-	const [PendingApplications, setPendingApplications] = useState<
-		Registration[]
-	>([]);
-	useEffect(() => {
-		const fetchData = async () => {
-			const { data, error } = await supabase
-				.from("Registration")
-				.select("*")
-				.eq("status", "pending");
-
-			if (error) {
-				console.error("Error fetching registry data:", error);
-			} else {
-				setPendingApplications(data ?? []);
-			}
-		};
-
-		fetchData();
-	}, []);
-
+export function DashboardOverview({
+	setActiveTab,
+	pendingApplications,
+}: DashboardOverviewProps) {
+	// ...rest of the component
 	const [PWDCount, setPWDCount] = useState<number | null>(null);
 
 	useEffect(() => {
@@ -170,7 +155,7 @@ export function DashboardOverview({ setActiveTab }: DashboardOverviewProps) {
 							Pending Applications
 						</p>
 						<h3 className="text-3xl font-bold font-Jakarta text-foreground">
-							{PendingApplications.length}
+							{pendingApplications.length}
 						</h3>
 						<p className="text-[11px] font-medium text-slate-500">
 							Requires review
@@ -231,7 +216,7 @@ export function DashboardOverview({ setActiveTab }: DashboardOverviewProps) {
 								Pending Applications
 							</h4>
 							<span className="text-[10px] font-extrabold px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full">
-								{PendingApplications.length} pending
+								{pendingApplications.length} pending
 							</span>
 						</div>
 						<button
@@ -241,12 +226,12 @@ export function DashboardOverview({ setActiveTab }: DashboardOverviewProps) {
 						</button>
 					</div>
 					<div className="divide-y divide-slate-100">
-						{PendingApplications.length === 0 ? (
+						{pendingApplications.length === 0 ? (
 							<div className="p-6 text-center text-xs text-slate-400">
 								No pending applications.
 							</div>
 						) : (
-							PendingApplications.map((app) => (
+							pendingApplications.map((app) => (
 								<div
 									key={app.id}
 									className="p-4 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/50 transition">

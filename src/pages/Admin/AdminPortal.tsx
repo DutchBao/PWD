@@ -8,6 +8,7 @@ import { VerificationAuditLogs } from "./VerificationAuditLogs";
 import { ReportsAnalytics } from "./ReportsAnalytics";
 import { supabase } from "./createAdminClient";
 import type { Session } from "@supabase/supabase-js";
+import type { Registration } from "../../../database.types";
 
 const SESSION_KEY = "mswdo_admin_user";
 
@@ -23,7 +24,6 @@ function loadStoredUser(): AdminUser | null {
 export function AdminPortalController() {
 	const [user, setUser] = useState<AdminUser | null>(loadStoredUser);
 	const [activeTab, setActiveTab] = useState("overview");
-	const [applicationCount, setApplicationCount] = useState<number | null>(null);
 
 	const isAuthenticated = user !== null;
 
@@ -40,7 +40,6 @@ export function AdminPortalController() {
 		await supabase.auth.signOut();
 		setUser(null);
 		setActiveTab("overview");
-		setApplicationCount(null);
 		try {
 			sessionStorage.removeItem(SESSION_KEY);
 		} catch {
@@ -69,23 +68,27 @@ export function AdminPortalController() {
 		return () => sub.subscription.unsubscribe();
 	}, []);
 
-	// Only fetch once an admin is logged in
+	// Shared pending-applications data — used by both DashboardOverview and PwdRegistry
+	const [PendingApplications, setPendingApplications] = useState<
+		Registration[]
+	>([]);
 	useEffect(() => {
 		if (!isAuthenticated) return;
 
-		const fetchCount = async () => {
-			const { count, error } = await supabase
+		const fetchData = async () => {
+			const { data, error } = await supabase
 				.from("Registration")
-				.select("*", { count: "exact", head: true });
+				.select("*")
+				.eq("status", "pending");
 
 			if (error) {
-				console.error("Error fetching count:", error);
+				console.error("Error fetching registry data:", error);
 			} else {
-				setApplicationCount(count);
+				setPendingApplications(data ?? []);
 			}
 		};
 
-		fetchCount();
+		fetchData();
 	}, [isAuthenticated]);
 
 	const TABS = [
@@ -93,9 +96,9 @@ export function AdminPortalController() {
 		{
 			id: "applications",
 			label:
-				applicationCount === null
+				PendingApplications === null
 					? "Applications"
-					: `Applications (${applicationCount})`,
+					: `Applications (${PendingApplications.length})`,
 			icon: "📄",
 		},
 		{ id: "registry", label: "PWD Registry", icon: "👥" },
@@ -149,10 +152,15 @@ export function AdminPortalController() {
 					<div className="flex-1 w-full max-w-7xl mx-auto flex flex-col">
 						<main className="flex-1 p-6 lg:p-8 w-full">
 							{activeTab === "overview" && (
-								<DashboardOverview setActiveTab={setActiveTab} />
+								<DashboardOverview
+									setActiveTab={setActiveTab}
+									pendingApplications={PendingApplications}
+								/>
 							)}
 							{activeTab === "applications" && <ApplicationsWorkflow />}
-							{activeTab === "registry" && <PwdRegistry />}
+							{activeTab === "registry" && (
+								<PwdRegistry pendingApplications={PendingApplications} />
+							)}
 							{activeTab === "audit" && <VerificationAuditLogs />}
 							{activeTab === "reports" && <ReportsAnalytics />}
 						</main>
