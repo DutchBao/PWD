@@ -36,7 +36,8 @@ export function ApplicationsWorkflow() {
 		});
 	}, [ApplicationData]);
 
-	// Signed photo URLs, keyed by registration id
+	/* pwd-photos is a private bucket, so the raw photo_path can't be used as
+	an <img src> directly — each photo needs a short-lived signed URL first. */
 	const [photoUrls, setPhotoUrls] = useState<Record<number, string>>({});
 	useEffect(() => {
 		const loadPhotos = async () => {

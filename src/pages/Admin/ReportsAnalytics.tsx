@@ -60,7 +60,6 @@ export function ReportsAnalytics() {
 		const today = new Date().toISOString().slice(0, 10);
 
 		const fetchAll = async () => {
-			// 1. Verification logs for the last 6 months, for the bar chart + monthly metrics
 			const { data: logs, error: logsError } = await supabase
 				.from("VerificationLogs")
 				.select("TimeStamp, Result")
@@ -118,7 +117,6 @@ export function ReportsAnalytics() {
 				}));
 			}
 
-			// 2. Disability type distribution
 			const { data: pwds, error: pwdError } = await supabase
 				.from("PWDinformation")
 				.select("disabilityProfile, Status, expiration_date, created_at");
@@ -157,7 +155,6 @@ export function ReportsAnalytics() {
 				}));
 			}
 
-			// 3. Participating establishments
 			const { count: establishments, error: merchError } = await supabase
 				.from("merchants")
 				.select("*", { count: "exact", head: true });

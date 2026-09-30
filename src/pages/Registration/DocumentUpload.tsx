@@ -9,7 +9,7 @@ type Props = {
 	onBack: () => void;
 };
 
-// A real 1x1 transparent PNG, used only if the applicant doesn't upload a photo
+// keeps the approval flow working even when a photo wasn't provided.
 const PLACEHOLDER_PNG_BASE64 =
 	"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
 
@@ -73,7 +73,7 @@ export function DocumentUpload({ data, update, onNext, onBack }: Props) {
 		setSubmitting(true);
 		setErrorMsg("");
 
-		// 1. Upload the medical document (required — no placeholder fallback)
+		// abort before creating a Registration row if this upload fails.
 		const docResult = await uploadOne(
 			"pwd-documents",
 			data.documentFile,
@@ -86,7 +86,6 @@ export function DocumentUpload({ data, update, onNext, onBack }: Props) {
 			return;
 		}
 
-		// 2. Upload the applicant photo, or a 1x1 placeholder if none was given
 		const photoResult = await uploadOne("pwd-photos", data.photoFile, "png");
 		if ("error" in photoResult) {
 			console.error(photoResult.error);
@@ -134,7 +133,6 @@ export function DocumentUpload({ data, update, onNext, onBack }: Props) {
 			</p>
 
 			<div className="space-y-4">
-				{/* Medical Certificate / PWD ID */}
 				<div>
 					<p className="text-xs font-bold text-[#002868] mb-1.5">
 						Medical Certificate or Physical PWD ID
@@ -187,7 +185,6 @@ export function DocumentUpload({ data, update, onNext, onBack }: Props) {
 					</label>
 				</div>
 
-				{/* Applicant Photo */}
 				<div>
 					<p className="text-xs font-bold text-[#002868] mb-1.5">
 						Photo of Applicant

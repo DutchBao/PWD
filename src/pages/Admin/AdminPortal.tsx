@@ -48,13 +48,14 @@ export function AdminPortalController() {
 		}
 	};
 
-	// Listen for browser navigation (Back/Forward buttons)
+	/* Pressing Back after login would otherwise show a cached authenticated
+	page even though the session may be gone — force logout so Back always
+	lands on the login screen instead of a stale admin view. */
 	useEffect(() => {
 		if (!isAuthenticated) return;
 		window.history.pushState({ adminLoggedIn: true }, "");
 
 		const handlePopState = () => {
-			// When back button is pressed, log out the user
 			handleLogout();
 		};
 
@@ -85,7 +86,9 @@ export function AdminPortalController() {
 		return () => sub.subscription.unsubscribe();
 	}, []);
 
-	// Shared pending-applications data — used by both DashboardOverview and PwdRegistry
+	/*Fetched once here (not in each tab) so the "Applications" badge count,
+	the dashboard's pending list, and the registry's pending banner all stay
+	in sync without three separate queries.*/
 	const [PendingApplications, setPendingApplications] = useState<
 		Registration[]
 	>([]);

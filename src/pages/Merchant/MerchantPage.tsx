@@ -83,7 +83,8 @@ export function MerchantPage({ onLogout }: MerchantPageProps) {
 
 		let photoUrl: string | undefined = undefined;
 
-		// Fetch signed URL for the photo if photo_path is returned
+		/* The edge function returns a storage path, not a usable URL — the
+		photo lives in a private bucket, so it must be signed client-side. */
 		const path = data.photo_path;
 		if (path) {
 			const { data: signedPhoto } = await supabase.storage
@@ -136,7 +137,7 @@ export function MerchantPage({ onLogout }: MerchantPageProps) {
 					handleScan(decodedText);
 				},
 				() => {
-					// per-frame scan failure — expected constantly while no QR is in view, ignore
+					// Fires on every frame with no QR in view — not an error, just noise.
 				},
 			)
 			.then(() => {
@@ -148,16 +149,13 @@ export function MerchantPage({ onLogout }: MerchantPageProps) {
 
 		return () => {
 			if (!isStarted) return;
-
 			try {
 				scanner
 					.stop()
 					.then(() => scanner.clear())
-					.catch(() => {
-						/* already stopped */
-					});
+					.catch(() => {});
 			} catch {
-				/* stop() threw synchronously — scanner was already stopped */
+				/* already stopped synchronously */
 			}
 		};
 	}, [scanning, handleScan]);
@@ -200,7 +198,6 @@ export function MerchantPage({ onLogout }: MerchantPageProps) {
 					{lastResult && !busy && (
 						<div
 							className={`min-h-96 border-2 rounded-xl p-6 flex flex-col items-center justify-center space-y-4 text-center animate-scaleUp ${resultStyles[lastResult.result].bg}`}>
-							{/* PWD Photo Preview or Status Icon */}
 							<div className="flex flex-col items-center gap-2">
 								{lastResult.photoUrl ? (
 									<div className="w-20 h-20 bg-slate-100 border-2 border-white rounded-2xl overflow-hidden shadow-sm flex items-center justify-center shrink-0">

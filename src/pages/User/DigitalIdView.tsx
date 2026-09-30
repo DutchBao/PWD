@@ -29,7 +29,7 @@ interface PwdRecord {
 	expiration_date: string | null;
 	Status: string | null;
 	qr_path: string | null;
-	photo_path: string | null; // Make sure column name matches your database schema
+	photo_path: string | null;
 }
 
 export function DigitalIdView({ user, onLogout }: UserPortalProps) {
@@ -45,7 +45,6 @@ export function DigitalIdView({ user, onLogout }: UserPortalProps) {
 		const fetchRecord = async () => {
 			setLoading(true);
 
-			// Fetch record including photo_path column
 			const { data, error } = await supabase
 				.from("PWDinformation")
 				.select(
@@ -64,7 +63,6 @@ export function DigitalIdView({ user, onLogout }: UserPortalProps) {
 
 			setRecord(data);
 
-			// Fetch signed URL for QR Code
 			if (data?.qr_path) {
 				const { data: signedQr, error: qrError } = await supabase.storage
 					.from("QR-Codes")
@@ -75,10 +73,9 @@ export function DigitalIdView({ user, onLogout }: UserPortalProps) {
 				}
 			}
 
-			// Fetch signed URL or public URL for 1x1 Photo
 			if (data?.photo_path) {
 				const { data: signedPhoto, error: photoError } = await supabase.storage
-					.from("pwd-photos") // Replace with your exact bucket name
+					.from("pwd-photos")
 					.createSignedUrl(data.photo_path, 3600);
 
 				if (!photoError && signedPhoto) {
@@ -132,7 +129,6 @@ export function DigitalIdView({ user, onLogout }: UserPortalProps) {
 					</div>
 
 					<div className="flex items-start space-x-4 pt-1">
-						{/* 1x1 Photo / Fallback Avatar */}
 						<div className="w-20 h-20 bg-slate-100 border border-slate-200 rounded-2xl overflow-hidden flex items-center justify-center shrink-0 shadow-xs">
 							{loading ? (
 								<div className="w-full h-full bg-slate-200 animate-pulse" />

@@ -1,7 +1,6 @@
 interface HeaderProps {
 	showHomeButton?: boolean;
 	transparent?: boolean;
-	// Optional extensions for authenticated merchant layout views
 	Username?: string;
 	establishmentName?: string;
 	onLogout?: () => void;
@@ -20,14 +19,12 @@ export function Header({
 				transparent ? "bg-transparent shadow-none" : "bg-primary text-white"
 			}`}>
 			<div className="max-w-7xl mx-auto w-full flex items-center justify-between space-x-6">
-				{/* Left Side Grouping layout wrapper */}
 				<div className="flex items-center space-x-6">
-					{/* Optional Back to Home Button */}
 					{showHomeButton && (
 						<>
 							<button
 								type="button"
-								onClick={() => (window.location.href = "/")} // Or use your router's navigate function
+								onClick={() => (window.location.href = "/")}
 								className="flex items-center space-x-2 text-sm text-white opacity-90 hover:opacity-100 transition-opacity focus:outline-hidden cursor-pointer">
 								<svg
 									xmlns="http://www.w3.org/2000/svg"
@@ -44,15 +41,11 @@ export function Header({
 								</svg>
 								<span>Home</span>
 							</button>
-
-							{/* Vertical Divider Line */}
 							<div className="h-8 w-px bg-white/20" />
 						</>
 					)}
 
-					{/* Institutional Branding Group */}
 					<div className="flex items-center space-x-3 text-white">
-						{/* Government Shield Placeholder Icon */}
 						<div className="p-1.5 bg-white/10 rounded-full shrink-0">
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -80,7 +73,6 @@ export function Header({
 					</div>
 				</div>
 
-				{/* Right Side Grouping layout area: Renders merchant data block if authenticated */}
 				{Username && onLogout && (
 					<div className="flex items-center space-x-6 animate-fadeIn">
 						<div className="text-right hidden sm:block">
