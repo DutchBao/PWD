@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "./createAdminClient";
-import type { PWDinformation, Registration } from "../../../database.types";
+import type { PWDinformation, Registration } from "../../database.types";
 
 import {
 	Search,

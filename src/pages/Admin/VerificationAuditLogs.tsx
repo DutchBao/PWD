@@ -9,7 +9,7 @@ interface VerificationLog {
 	pwdNum: string | null;
 	Establishment: string | null;
 	Account: string | null;
-	Result: string;
+	Result: string | null;
 }
 
 export function VerificationAuditLogs() {

@@ -1,6 +1,6 @@
 import { supabase } from "./createAdminClient";
 import { useEffect, useState } from "react";
-import type { Registration } from "../../../database.types";
+import type { Registration } from "../../database.types";
 
 import { CheckCircle, AlertTriangle, FileText, Users, Zap } from "lucide-react";
 

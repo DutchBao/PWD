@@ -8,7 +8,7 @@ import { VerificationAuditLogs } from "./VerificationAuditLogs";
 import { ReportsAnalytics } from "./ReportsAnalytics";
 import { supabase } from "./createAdminClient";
 import type { Session } from "@supabase/supabase-js";
-import type { Registration } from "../../../database.types";
+import type { Registration } from "../../database.types";
 
 const SESSION_KEY = "mswdo_admin_user";
 

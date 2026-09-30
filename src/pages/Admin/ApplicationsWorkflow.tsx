@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "./createAdminClient";
-import type { Registration } from "../../../database.types";
+import type { Registration } from "../../database.types";
 import { FunctionsHttpError } from "@supabase/supabase-js";
 
 import {
@@ -168,7 +168,8 @@ export function ApplicationsWorkflow() {
 												href="#"
 												onClick={(e) => {
 													e.preventDefault();
-													openDocument(app.document_path);
+													if (app.document_path)
+														openDocument(app.document_path);
 												}}
 												className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline bg-blue-50/60 px-2.5 py-1.5 rounded-lg border border-blue-100/50">
 												<FileText className="w-3.5 h-3.5" /> {app.document_path}
