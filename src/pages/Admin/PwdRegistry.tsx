@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import type { PWDinformation, Registration } from "../../database.types";
+import { PwdRecordModal } from "./PwdRecordModal";
 
 import {
 	Search,
@@ -21,7 +22,12 @@ export function PwdRegistry({ pendingApplications }: PwdRegistryProps) {
 	const [searchTerm, setSearchTerm] = useState("");
 	const [refreshing, setRefreshing] = useState(false);
 
-	// Dedicated function for manual re-fetching (e.g., refresh button)
+	// Modal state — null means closed, "new" means Add mode, a row means Edit mode
+	const [modalMode, setModalMode] = useState<"closed" | "add" | "edit">(
+		"closed",
+	);
+	const [editingRow, setEditingRow] = useState<PWDinformation | null>(null);
+
 	const reloadRegistry = async () => {
 		const { data, error } = await supabase.from("PWDinformation").select("*");
 		if (error) {
@@ -31,7 +37,6 @@ export function PwdRegistry({ pendingApplications }: PwdRegistryProps) {
 		}
 	};
 
-	// Consolidated initial data load inside effect body
 	useEffect(() => {
 		let isMounted = true;
 
@@ -143,6 +148,33 @@ export function PwdRegistry({ pendingApplications }: PwdRegistryProps) {
 		URL.revokeObjectURL(url);
 	};
 
+	const openAddModal = () => {
+		setEditingRow(null);
+		setModalMode("add");
+	};
+
+	const openEditModal = (row: PWDinformation) => {
+		setEditingRow(row);
+		setModalMode("edit");
+	};
+
+	const closeModal = () => {
+		setModalMode("closed");
+		setEditingRow(null);
+	};
+
+	const handleSaved = (row: PWDinformation) => {
+		if (modalMode === "edit") {
+			setRegistryData((prev) =>
+				prev.map((r) => (r.pwdNum === row.pwdNum ? row : r)),
+			);
+		} else {
+			setRegistryData((prev) => [row, ...prev]);
+			setTotalCount((prev) => (prev !== null ? prev + 1 : prev));
+		}
+		closeModal();
+	};
+
 	return (
 		<div className="space-y-4 font-Jakarta animate-fadeIn">
 			<div className="w-full flex flex-col sm:flex-row gap-3 items-center justify-between">
@@ -157,7 +189,9 @@ export function PwdRegistry({ pendingApplications }: PwdRegistryProps) {
 					/>
 				</div>
 				<div className="flex items-center space-x-2 w-full sm:w-auto shrink-0">
-					<button className="flex-1 sm:flex-none px-4 py-2.5 bg-primary hover:bg-blue-800 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition shadow-sm cursor-pointer">
+					<button
+						onClick={openAddModal}
+						className="flex-1 sm:flex-none px-4 py-2.5 bg-primary hover:bg-blue-800 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition shadow-sm cursor-pointer">
 						<PlusCircle className="w-4 h-4" /> Add Record
 					</button>
 					<button
@@ -225,7 +259,9 @@ export function PwdRegistry({ pendingApplications }: PwdRegistryProps) {
 									</td>
 									<td className="p-4">
 										<div className="flex items-center justify-center space-x-1">
-											<button className="p-1.5 bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-500 rounded-md transition cursor-pointer">
+											<button
+												onClick={() => openEditModal(row)}
+												className="p-1.5 bg-slate-50 border border-slate-200 hover:bg-blue-50 hover:border-blue-200 hover:text-primary text-slate-500 rounded-md transition cursor-pointer">
 												<Edit2 className="w-3.5 h-3.5" />
 											</button>
 											<button
@@ -249,6 +285,14 @@ export function PwdRegistry({ pendingApplications }: PwdRegistryProps) {
 					</table>
 				</div>
 			</div>
+
+			{modalMode !== "closed" && (
+				<PwdRecordModal
+					editingRow={editingRow}
+					onClose={closeModal}
+					onSaved={handleSaved}
+				/>
+			)}
 		</div>
 	);
 }
