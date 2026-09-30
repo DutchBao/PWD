@@ -9,7 +9,7 @@ import {
 	EyeOff,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { supabase } from "../../createClient";
+import { supabase } from "../../lib/supabaseClient";
 
 interface UserLoginProps {
 	onLoginSuccess?: (userData: {

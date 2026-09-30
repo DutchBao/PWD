@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Header } from "../../components/Header";
 import { MerchantLogin, type MerchantUser } from "./MerchantLogin";
 import { MerchantPage } from "./MerchantPage";
-import { supabase } from "./createMerchantClient";
+import { supabase } from "../../lib/supabaseClient";
 
 export function MerchantPortalController() {
 	const [merchant, setMerchant] = useState<MerchantUser | null>(null);

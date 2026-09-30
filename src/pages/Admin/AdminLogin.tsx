@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { ArrowRight, Shield, Eye, EyeOff } from "lucide-react";
-import { supabase } from "./createAdminClient";
+import { supabase } from "../../lib/supabaseClient";
 
 export interface AdminUser {
 	authId: string;
@@ -37,7 +37,7 @@ export function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
 		}
 
 		// 2. Look up this account's profile and role
-		const { data: profile, error: profileError } = await (supabase as any)
+		const { data: profile, error: profileError } = await supabase
 			.from("admins")
 			.select("user_name, full_name")
 			.eq("auth_id", authData.user.id)

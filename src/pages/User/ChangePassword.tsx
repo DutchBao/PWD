@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Lock, ArrowRight, Eye, EyeOff } from "lucide-react";
-import { supabase } from "../../createClient";
+import { supabase } from "../../lib/supabaseClient";
 
 interface Props {
 	pwdNumber: string;

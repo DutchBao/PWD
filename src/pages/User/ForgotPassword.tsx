@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Mail, ArrowRight, ArrowLeft } from "lucide-react";
-import { supabase } from "../../createClient";
+import { supabase } from "../../lib/supabaseClient";
 
 interface Props {
 	onBack: () => void;

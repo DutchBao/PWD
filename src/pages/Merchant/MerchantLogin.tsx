@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Camera } from "lucide-react";
-import { supabase } from "./createMerchantClient.ts";
+import { supabase } from "../../lib/supabaseClient";
 
 export interface MerchantUser {
 	authId: string;

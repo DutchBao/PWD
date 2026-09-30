@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "./createAdminClient";
+import { supabase } from "../../lib/supabaseClient";
 
 interface MonthBucket {
 	month: string;

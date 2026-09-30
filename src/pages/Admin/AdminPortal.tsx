@@ -6,7 +6,7 @@ import { ApplicationsWorkflow } from "./ApplicationsWorkflow";
 import { PwdRegistry } from "./PwdRegistry";
 import { VerificationAuditLogs } from "./VerificationAuditLogs";
 import { ReportsAnalytics } from "./ReportsAnalytics";
-import { supabase } from "./createAdminClient";
+import { supabase } from "../../lib/supabaseClient";
 import type { Session } from "@supabase/supabase-js";
 import type { Registration } from "../../database.types";
 
@@ -125,8 +125,8 @@ export function AdminPortalController() {
 				</div>
 			) : (
 				<>
-					<nav className="w-full bg-white border-b border-slate-200 px-6 flex items-end shadow-xs">
-						<div className="flex space-x-1 max-w-7xl mx-auto w-full">
+					<nav className="w-full bg-white border-b border-slate-200 shadow-xs overflow-x-auto overflow-y-hidden scrollbar-none">
+						<div className="flex items-end space-x-1 px-6 max-w-7xl mx-auto w-max min-w-full">
 							{TABS.map((tab) => {
 								const isActive = activeTab === tab.id;
 								return (
@@ -134,7 +134,7 @@ export function AdminPortalController() {
 										key={tab.id}
 										type="button"
 										onClick={() => setActiveTab(tab.id)}
-										className={`px-5 py-3.5 text-xs font-bold tracking-wide border-b-2 transition-all duration-150 cursor-pointer focus:outline-hidden flex items-center ${
+										className={`shrink-0 px-5 py-3.5 text-xs font-bold tracking-wide border-b-2 transition-all duration-150 cursor-pointer focus:outline-hidden flex items-center ${
 											isActive
 												? "border-[#0038a8] text-[#0038a8] font-extrabold bg-slate-50/50"
 												: "border-transparent text-slate-500 hover:text-[#0038a8] hover:bg-slate-50/30"

@@ -1,6 +1,6 @@
 import type { RegistrationData } from "./Register";
-import { useState } from "react";
-import { supabase } from "./RegistrationClient.ts";
+import { useState, useEffect, useMemo } from "react";
+import { supabase } from "../../lib/supabaseClient";
 
 type Props = {
 	data: RegistrationData;
@@ -21,6 +21,29 @@ function base64ToBlob(base64: string, mime: string) {
 export function DocumentUpload({ data, update, onNext, onBack }: Props) {
 	const [submitting, setSubmitting] = useState(false);
 	const [errorMsg, setErrorMsg] = useState("");
+
+	const photoPreview = useMemo(() => {
+		if (!data.photoFile) return null;
+		return URL.createObjectURL(data.photoFile);
+	}, [data.photoFile]);
+
+	useEffect(() => {
+		return () => {
+			if (photoPreview) URL.revokeObjectURL(photoPreview);
+		};
+	}, [photoPreview]);
+
+	const documentPreview = useMemo(() => {
+		if (!data.documentFile) return null;
+		if (!data.documentFile.type.startsWith("image/")) return null;
+		return URL.createObjectURL(data.documentFile);
+	}, [data.documentFile]);
+
+	useEffect(() => {
+		return () => {
+			if (documentPreview) URL.revokeObjectURL(documentPreview);
+		};
+	}, [documentPreview]);
 
 	const uploadOne = async (
 		bucket: string,
@@ -116,32 +139,51 @@ export function DocumentUpload({ data, update, onNext, onBack }: Props) {
 					<p className="text-xs font-bold text-[#002868] mb-1.5">
 						Medical Certificate or Physical PWD ID
 					</p>
-					<label className="border-2 border-dashed border-blue-200 bg-blue-50/10 rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-blue-50/20 transition">
+					<label className="border-2 border-dashed border-blue-200 bg-blue-50/10 rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-blue-50/20 transition overflow-clip">
 						<input
 							type="file"
 							accept="image/png,image/jpeg,application/pdf"
+							className="hidden"
 							onChange={(e) =>
 								update({ documentFile: e.target.files?.[0] ?? null })
 							}
 						/>
-						<div className="w-9 h-9 bg-blue-50 text-[#0046b4] rounded-full flex items-center justify-center mb-2">
-							📤
-						</div>
 						{data.documentFile ? (
-							<p className="text-sm font-semibold text-gray-700">
-								{data.documentFile.name}
-							</p>
+							<>
+								{documentPreview ? (
+									<img
+										src={documentPreview}
+										alt="Preview"
+										className="w-20 h-20 object-cover rounded-xl border border-gray-200 mb-2"
+									/>
+								) : (
+									<div className="w-9 h-9 bg-blue-50 text-[#0046b4] rounded-full flex items-center justify-center mb-2 text-lg">
+										📄
+									</div>
+								)}
+								<p className="text-sm font-semibold text-gray-700 break-all px-2">
+									{data.documentFile.name}
+								</p>
+								<p className="text-xs text-[#0046b4] font-semibold underline mt-1">
+									Change file
+								</p>
+							</>
 						) : (
-							<p className="text-sm text-gray-700">
-								<span className="font-semibold">Drop file here or </span>
-								<span className="text-[#0046b4] font-semibold underline">
-									browse
-								</span>
-							</p>
+							<>
+								<div className="w-9 h-9 bg-blue-50 text-[#0046b4] rounded-full flex items-center justify-center mb-2">
+									📤
+								</div>
+								<p className="text-sm text-gray-700">
+									<span className="font-semibold">Drop file here or </span>
+									<span className="text-[#0046b4] font-semibold underline">
+										browse
+									</span>
+								</p>
+								<p className="text-xs text-gray-400 mt-1">
+									PNG, JPG, or PDF · max 5MB
+								</p>
+							</>
 						)}
-						<p className="text-xs text-gray-400 mt-1">
-							PNG, JPG, or PDF · max 5MB
-						</p>
 					</label>
 				</div>
 
@@ -154,26 +196,41 @@ export function DocumentUpload({ data, update, onNext, onBack }: Props) {
 						<input
 							type="file"
 							accept="image/png,image/jpeg"
+							className="hidden"
 							onChange={(e) =>
 								update({ photoFile: e.target.files?.[0] ?? null })
 							}
 						/>
-						<div className="w-9 h-9 bg-blue-50 text-[#0046b4] rounded-full flex items-center justify-center mb-2">
-							🧑
-						</div>
-						{data.photoFile ? (
-							<p className="text-sm font-semibold text-gray-700">
-								{data.photoFile.name}
-							</p>
+						{photoPreview ? (
+							<>
+								<img
+									src={photoPreview}
+									alt="Preview"
+									className="w-20 h-20 object-cover rounded-full border border-gray-200 mb-2"
+								/>
+								<p className="text-sm font-semibold text-gray-700">
+									{data.photoFile!.name}
+								</p>
+								<p className="text-xs text-[#0046b4] font-semibold underline mt-1">
+									Change photo
+								</p>
+							</>
 						) : (
-							<p className="text-sm text-gray-700">
-								<span className="font-semibold">Drop file here or </span>
-								<span className="text-[#0046b4] font-semibold underline">
-									browse
-								</span>
-							</p>
+							<>
+								<div className="w-9 h-9 bg-blue-50 text-[#0046b4] rounded-full flex items-center justify-center mb-2">
+									🧑
+								</div>
+								<p className="text-sm text-gray-700">
+									<span className="font-semibold">Drop file here or </span>
+									<span className="text-[#0046b4] font-semibold underline">
+										browse
+									</span>
+								</p>
+								<p className="text-xs text-gray-400 mt-1">
+									PNG or JPG · max 5MB
+								</p>
+							</>
 						)}
-						<p className="text-xs text-gray-400 mt-1">PNG or JPG · max 5MB</p>
 					</label>
 				</div>
 			</div>

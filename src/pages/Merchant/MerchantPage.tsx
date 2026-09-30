@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Html5Qrcode } from "html5-qrcode";
-import { supabase } from "./createMerchantClient";
+import { supabase } from "../../lib/supabaseClient";
 import {
 	Camera,
 	CheckCircle,

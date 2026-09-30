@@ -1,8 +1,30 @@
+import { useState, useEffect } from "react";
 import { Header } from "../components/Header";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "../lib/supabaseClient.ts";
 
 export function HomePage() {
 	const navigate = useNavigate();
+	const [stats, setStats] = useState<{
+		registered: number;
+		active: number;
+		verifications: number;
+		fraud_flags: number;
+	} | null>(null);
+
+	useEffect(() => {
+		const fetchStats = async () => {
+			const { data, error } = await supabase.rpc("get_homepage_stats");
+			if (error) {
+				console.error("Error fetching stats:", error);
+				return;
+			}
+			if (data && data[0]) {
+				setStats(data[0]);
+			}
+		};
+		fetchStats();
+	}, []);
 	return (
 		<>
 			{/* Top Header */}
@@ -276,7 +298,7 @@ export function HomePage() {
 					{/* Registered PWDs */}
 					<div className="border-r border-white/10 last:border-none md:odd:border-r">
 						<p className="text-2xl md:text-3xl font-bold tracking-tight">
-							3,196
+							{stats ? stats.registered.toLocaleString() : "—"}
 						</p>
 						<p className="text-[9px] uppercase tracking-wider text-white/70 font-medium mt-0.5">
 							Registered PWDs
@@ -285,7 +307,7 @@ export function HomePage() {
 					{/* Active Digital IDs */}
 					<div className="md:border-r border-white/10">
 						<p className="text-2xl md:text-3xl font-bold tracking-tight">
-							2,841
+							{stats ? stats.active.toLocaleString() : "—"}
 						</p>
 						<p className="text-[9px] uppercase tracking-wider text-white/70 font-medium mt-0.5">
 							Active Digital IDs
@@ -294,7 +316,7 @@ export function HomePage() {
 					{/* Verifications */}
 					<div className="border-r border-white/10">
 						<p className="text-2xl md:text-3xl font-bold tracking-tight">
-							18,432
+							{stats ? stats.verifications.toLocaleString() : "—"}
 						</p>
 						<p className="text-[9px] uppercase tracking-wider text-white/70 font-medium mt-0.5">
 							Verifications (2025)
@@ -302,7 +324,9 @@ export function HomePage() {
 					</div>
 					{/* Fraud Flags Stopped */}
 					<div>
-						<p className="text-2xl md:text-3xl font-bold tracking-tight">174</p>
+						<p className="text-2xl md:text-3xl font-bold tracking-tight">
+							{stats ? stats.fraud_flags.toLocaleString() : "—"}
+						</p>
 						<p className="text-[9px] uppercase tracking-wider text-white/70 font-medium mt-0.5">
 							Fraud Flags Stopped
 						</p>
@@ -311,7 +335,7 @@ export function HomePage() {
 			</section>
 
 			{/* --- FOOTER REGULATORY & INFORMATION LOGS --- */}
-			<footer className="mt-20 bg-foreground text-white/60 py-6 text-center text-[11px] border-t border-white/5 w-full">
+			<footer className="bottom mt-20 bg-foreground text-white/60 py-6 text-center text-[11px] border-t border-white/5 w-full">
 				<div className="max-w-4xl mx-auto px-4 space-y-1">
 					<p className="font-semibold text-white/80">
 						Office for Persons with Disabilities Affairs — Guagua, Pampanga

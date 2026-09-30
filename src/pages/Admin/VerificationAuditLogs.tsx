@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "./createAdminClient";
+import { supabase } from "../../lib/supabaseClient";
 import { Download, CheckCircle, AlertTriangle } from "lucide-react";
 
 interface VerificationLog {
