@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 import { supabase } from "./createMerchantClient";
 import {
@@ -63,42 +63,8 @@ export function MerchantPage({ onLogout }: MerchantPageProps) {
 	const scannerRef = useRef<Html5Qrcode | null>(null);
 	const handledRef = useRef(false);
 
-	useEffect(() => {
-		if (!scanning) return;
-
-		handledRef.current = false;
-		const scanner = new Html5Qrcode(SCANNER_ELEMENT_ID);
-		scannerRef.current = scanner;
-
-		scanner
-			.start(
-				{ facingMode: "environment" },
-				{ fps: 10, qrbox: { width: 250, height: 250 } },
-				(decodedText) => {
-					if (handledRef.current) return;
-					handledRef.current = true;
-					handleScan(decodedText);
-				},
-				() => {
-					// per-frame scan failure — expected constantly while no QR is in view, ignore
-				},
-			)
-			.catch((err) => {
-				console.error("Could not start camera:", err);
-			});
-
-		return () => {
-			scanner
-				.stop()
-				.then(() => scanner.clear())
-				.catch(() => {
-					/* already stopped */
-				});
-		};
-	}, [scanning]);
-
-	const handleScan = async (token: string) => {
-		if (busy) return;
+	// Moved above the useEffect that references it
+	const handleScan = useCallback(async (token: string) => {
 		setBusy(true);
 		setScanning(false);
 
@@ -129,7 +95,51 @@ export function MerchantPage({ onLogout }: MerchantPageProps) {
 			},
 			...prev,
 		]);
-	};
+	}, []);
+
+	useEffect(() => {
+		if (!scanning) return;
+
+		handledRef.current = false;
+		const scanner = new Html5Qrcode(SCANNER_ELEMENT_ID);
+		scannerRef.current = scanner;
+		let isStarted = false;
+
+		scanner
+			.start(
+				{ facingMode: "environment" },
+				{ fps: 10, qrbox: { width: 250, height: 250 } },
+				(decodedText) => {
+					if (handledRef.current) return;
+					handledRef.current = true;
+					handleScan(decodedText);
+				},
+				() => {
+					// per-frame scan failure — expected constantly while no QR is in view, ignore
+				},
+			)
+			.then(() => {
+				isStarted = true;
+			})
+			.catch((err) => {
+				console.error("Could not start camera:", err);
+			});
+
+		return () => {
+			if (!isStarted) return;
+
+			try {
+				scanner
+					.stop()
+					.then(() => scanner.clear())
+					.catch(() => {
+						/* already stopped */
+					});
+			} catch {
+				/* stop() threw synchronously — scanner was already stopped */
+			}
+		};
+	}, [scanning, handleScan]);
 
 	const rescan = () => {
 		setLastResult(null);

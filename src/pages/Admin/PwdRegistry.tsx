@@ -12,9 +12,6 @@ import {
 } from "lucide-react";
 
 export function PwdRegistry() {
-	{
-		/*Fetching data from supabase*/
-	}
 	const [registryData, setRegistryData] = useState<PWDinformation[]>([]);
 	useEffect(() => {
 		const fetchData = async () => {
@@ -29,10 +26,6 @@ export function PwdRegistry() {
 
 		fetchData();
 	}, []);
-
-	{
-		/* Fetching total count of records from supabase */
-	}
 
 	const [totalCount, setTotalCount] = useState<number | null>(null);
 
@@ -73,7 +66,6 @@ export function PwdRegistry() {
 				</div>
 			</div>
 
-			{/* Core Registry Listing Frame Sheet Container */}
 			<div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
 				<div className="px-5 py-3.5 border-b border-slate-100 bg-slate-50/50">
 					<span className="text-xs font-semibold text-slate-500 font-DM">

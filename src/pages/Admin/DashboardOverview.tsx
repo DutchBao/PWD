@@ -8,6 +8,15 @@ interface DashboardOverviewProps {
 	setActiveTab: (tabId: string) => void;
 }
 
+interface RecentLog {
+	log_id: string;
+	TimeStamp: string;
+	pwdName: string | null;
+	pwdNum: string | null;
+	Establishment: string | null;
+	Result: string;
+}
+
 export function DashboardOverview({ setActiveTab }: DashboardOverviewProps) {
 	const [PendingApplications, setPendingApplications] = useState<
 		Registration[]
@@ -47,43 +56,93 @@ export function DashboardOverview({ setActiveTab }: DashboardOverviewProps) {
 		fetchCount();
 	}, []);
 
-	const recentActivity = [
-		{
-			name: "Maria Santos",
-			id: "PWD-2024-001",
-			location: "Mercury Drug, Guagua • pharmacy_guagua_01",
-			time: "2:47 PM",
-			status: "VERIFIED",
-		},
-		{
-			name: "Roberto Dela Cruz",
-			id: "PWD-2024-002",
-			location: "Mercury Drug, Guagua • pharmacy_guagua_01",
-			time: "1:12 PM",
-			status: "VERIFIED",
-		},
-		{
-			name: "Unknown ID",
-			id: "???-????-???",
-			location: "Mercury Drug, Guagua • pharmacy_guagua_01",
-			time: "11:55 AM",
-			status: "FLAGGED",
-		},
-		{
-			name: "Ligaya Reyes",
-			id: "PWD-2024-034",
-			location: "Puregold, Guagua • puregold_guagua_03",
-			time: "10:30 AM",
-			status: "VERIFIED",
-		},
-		{
-			name: "Danilo Ocampo",
-			id: "PWD-2023-118",
-			location: "SM Supermarket, San Fernando • sm_sanfernando_02",
-			time: "4:01 PM",
-			status: "VERIFIED",
-		},
-	];
+	const [verificationsToday, setVerificationsToday] = useState<number | null>(
+		null,
+	);
+	const [verificationsYesterday, setVerificationsYesterday] = useState<
+		number | null
+	>(null);
+	useEffect(() => {
+		const fetchTodayCount = async () => {
+			const startOfToday = new Date();
+			startOfToday.setHours(0, 0, 0, 0);
+			const startOfYesterday = new Date(startOfToday);
+			startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+
+			const { count: todayCount, error: todayError } = await supabase
+				.from("VerificationLogs")
+				.select("*", { count: "exact", head: true })
+				.gte("TimeStamp", startOfToday.toISOString());
+
+			const { count: yestCount, error: yestError } = await supabase
+				.from("VerificationLogs")
+				.select("*", { count: "exact", head: true })
+				.gte("TimeStamp", startOfYesterday.toISOString())
+				.lt("TimeStamp", startOfToday.toISOString());
+
+			if (todayError)
+				console.error("Error fetching today's count:", todayError);
+			else setVerificationsToday(todayCount);
+
+			if (yestError)
+				console.error("Error fetching yesterday's count:", yestError);
+			else setVerificationsYesterday(yestCount);
+		};
+
+		fetchTodayCount();
+	}, []);
+
+	const [fraudFlagsThisMonth, setFraudFlagsThisMonth] = useState<number | null>(
+		null,
+	);
+	useEffect(() => {
+		const fetchFraudCount = async () => {
+			const startOfMonth = new Date();
+			startOfMonth.setDate(1);
+			startOfMonth.setHours(0, 0, 0, 0);
+
+			const { count, error } = await supabase
+				.from("VerificationLogs")
+				.select("*", { count: "exact", head: true })
+				.neq("Result", "VERIFIED")
+				.gte("TimeStamp", startOfMonth.toISOString());
+
+			if (error) {
+				console.error("Error fetching fraud flag count:", error);
+			} else {
+				setFraudFlagsThisMonth(count);
+			}
+		};
+
+		fetchFraudCount();
+	}, []);
+
+	const [recentActivity, setRecentActivity] = useState<RecentLog[]>([]);
+	useEffect(() => {
+		const fetchRecent = async () => {
+			const { data, error } = await supabase
+				.from("VerificationLogs")
+				.select("log_id, TimeStamp, pwdName, pwdNum, Establishment, Result")
+				.order("TimeStamp", { ascending: false })
+				.limit(5)
+				.returns<RecentLog[]>();
+
+			if (error) {
+				console.error("Error fetching recent activity:", error);
+			} else {
+				setRecentActivity(data ?? []);
+			}
+		};
+
+		fetchRecent();
+	}, []);
+
+	const verificationsDelta =
+		verificationsToday !== null && verificationsYesterday !== null
+			? verificationsToday - verificationsYesterday
+			: null;
+
+	const monthLabel = new Date().toLocaleString("en-US", { month: "short" });
 
 	return (
 		<div className="space-y-6 animate-fadeIn font-Jakarta">
@@ -128,11 +187,17 @@ export function DashboardOverview({ setActiveTab }: DashboardOverviewProps) {
 							Verifications Today
 						</p>
 						<h3 className="text-3xl font-bold font-Jakarta text-foreground">
-							47
+							{verificationsToday !== null ? verificationsToday : "Loading..."}
 						</h3>
-						<p className="text-[11px] font-medium text-emerald-600">
-							+8 vs yesterday
-						</p>
+						{verificationsDelta !== null && (
+							<p
+								className={`text-[11px] font-medium ${
+									verificationsDelta >= 0 ? "text-emerald-600" : "text-accent"
+								}`}>
+								{verificationsDelta >= 0 ? "+" : ""}
+								{verificationsDelta} vs yesterday
+							</p>
+						)}
 					</div>
 					<div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl">
 						<Zap className="w-5 h-5" />
@@ -142,11 +207,13 @@ export function DashboardOverview({ setActiveTab }: DashboardOverviewProps) {
 				<div className="bg-white p-6 rounded-2xl border border-slate-200/60 shadow-xs flex items-start justify-between">
 					<div className="space-y-2">
 						<p className="text-xs font-bold text-muted-foreground/90 uppercase tracking-wide">
-							Fraud Flags (Jun)
+							Fraud Flags ({monthLabel})
 						</p>
-						<h3 className="text-3xl font-bold font-Jakarta text-accent">3</h3>
+						<h3 className="text-3xl font-bold font-Jakarta text-accent">
+							{fraudFlagsThisMonth !== null ? fraudFlagsThisMonth : "..."}
+						</h3>
 						<p className="text-[11px] font-medium text-muted-foreground">
-							Auto-reported to MSWDO
+							Invalid / unverified scans
 						</p>
 					</div>
 					<div className="p-2.5 bg-rose-50 text-accent rounded-xl">
@@ -212,44 +279,56 @@ export function DashboardOverview({ setActiveTab }: DashboardOverviewProps) {
 						</button>
 					</div>
 					<div className="divide-y divide-slate-100">
-						{recentActivity.map((activity, index) => (
-							<div
-								key={index}
-								className="p-4 sm:px-6 flex items-center justify-between gap-4 hover:bg-slate-50/50 transition">
-								<div className="flex items-start space-x-3">
+						{recentActivity.length === 0 ? (
+							<div className="p-6 text-center text-xs text-slate-400">
+								No verification activity yet.
+							</div>
+						) : (
+							recentActivity.map((activity) => {
+								const isVerified = activity.Result === "VERIFIED";
+								return (
 									<div
-										className={`p-2 rounded-full shrink-0 mt-0.5 ${activity.status === "VERIFIED" ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-accent"}`}>
-										{activity.status === "VERIFIED" ? (
-											<CheckCircle className="w-4 h-4" />
-										) : (
-											<AlertTriangle className="w-4 h-4" />
-										)}
-									</div>
-									<div>
-										<div className="flex flex-wrap items-center gap-x-2">
-											<h5 className="text-sm font-bold text-foreground">
-												{activity.name}
-											</h5>
-											<span className="text-[11px] font-DM font-semibold text-slate-500 tracking-wide">
-												({activity.id})
+										key={activity.log_id}
+										className="p-4 sm:px-6 flex items-center justify-between gap-4 hover:bg-slate-50/50 transition">
+										<div className="flex items-start space-x-3">
+											<div
+												className={`p-2 rounded-full shrink-0 mt-0.5 ${isVerified ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-accent"}`}>
+												{isVerified ? (
+													<CheckCircle className="w-4 h-4" />
+												) : (
+													<AlertTriangle className="w-4 h-4" />
+												)}
+											</div>
+											<div>
+												<div className="flex flex-wrap items-center gap-x-2">
+													<h5 className="text-sm font-bold text-foreground">
+														{activity.pwdName ?? "Unknown"}
+													</h5>
+													<span className="text-[11px] font-DM font-semibold text-slate-500 tracking-wide">
+														({activity.pwdNum ?? "???-????-???"})
+													</span>
+												</div>
+												<p className="text-xs text-muted-foreground/80 font-medium mt-0.5">
+													{activity.Establishment ?? "—"}
+												</p>
+											</div>
+										</div>
+										<div className="text-right shrink-0">
+											<p className="text-[11px] font-DM font-medium text-slate-500">
+												{new Date(activity.TimeStamp).toLocaleTimeString([], {
+													hour: "2-digit",
+													minute: "2-digit",
+												})}
+											</p>
+											<span
+												className={`text-[9px] font-extrabold tracking-wider block mt-1 ${isVerified ? "text-emerald-600" : "text-accent"}`}>
+												{activity.Result}
 											</span>
 										</div>
-										<p className="text-xs text-muted-foreground/80 font-medium mt-0.5">
-											{activity.location}
-										</p>
 									</div>
-								</div>
-								<div className="text-right shrink-0">
-									<p className="text-[11px] font-DM font-medium text-slate-500">
-										{activity.time}
-									</p>
-									<span
-										className={`text-[9px] font-extrabold tracking-wider block mt-1 ${activity.status === "VERIFIED" ? "text-emerald-600" : "text-accent"}`}>
-										{activity.status}
-									</span>
-								</div>
-							</div>
-						))}
+								);
+							})
+						)}
 					</div>
 				</div>
 			</div>
