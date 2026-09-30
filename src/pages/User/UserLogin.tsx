@@ -1,5 +1,13 @@
 import React, { useState } from "react";
-import { User, Lock, ArrowRight, ShieldCheck, HelpCircle } from "lucide-react";
+import {
+	User,
+	Lock,
+	ArrowRight,
+	ShieldCheck,
+	HelpCircle,
+	Eye,
+	EyeOff,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "../../createClient";
 
@@ -10,11 +18,16 @@ interface UserLoginProps {
 		mustChangePassword: boolean;
 		currentPassword: string;
 	}) => void;
+	onForgotPassword?: () => void;
 }
 
-export function UserLogin({ onLoginSuccess }: UserLoginProps) {
+export function UserLogin({
+	onLoginSuccess,
+	onForgotPassword,
+}: UserLoginProps) {
 	const [pwdNumber, setPwdNumber] = useState("");
 	const [password, setPassword] = useState("");
+	const [showPassword, setShowPassword] = useState(false);
 	const [error, setError] = useState("");
 	const [loading, setLoading] = useState(false);
 
@@ -85,24 +98,36 @@ export function UserLogin({ onLoginSuccess }: UserLoginProps) {
 								<label className="block text-xs font-bold text-slate-700 tracking-wide">
 									Password
 								</label>
-								<a
-									href="#forgot"
-									className="text-[11px] font-bold text-[#0038a8] hover:underline">
+								<button
+									type="button"
+									onClick={() => onForgotPassword?.()}
+									className="text-[11px] font-bold text-[#0038a8] hover:underline cursor-pointer">
 									Forgot Password?
-								</a>
+								</button>
 							</div>
 							<div className="relative">
 								<div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
 									<Lock className="w-4 h-4" />
 								</div>
 								<input
-									type="password"
+									type={showPassword ? "text" : "password"}
 									value={password}
 									onChange={(e) => setPassword(e.target.value)}
 									placeholder="••••••••"
 									required
-									className="w-full text-xs font-semibold pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-[#0038a8]/20 focus:border-[#0038a8] transition-all text-slate-800 placeholder:text-slate-400"
+									className="w-full text-xs font-semibold pl-10 pr-11 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-[#0038a8]/20 focus:border-[#0038a8] transition-all text-slate-800 placeholder:text-slate-400"
 								/>
+								<button
+									type="button"
+									onClick={() => setShowPassword((prev) => !prev)}
+									aria-label={showPassword ? "Hide password" : "Show password"}
+									className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer">
+									{showPassword ? (
+										<EyeOff className="w-4 h-4" />
+									) : (
+										<Eye className="w-4 h-4" />
+									)}
+								</button>
 							</div>
 						</div>
 

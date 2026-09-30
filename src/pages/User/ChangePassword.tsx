@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Lock, ArrowRight } from "lucide-react";
+import { Lock, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { supabase } from "../../createClient";
 
 interface Props {
@@ -11,6 +11,8 @@ interface Props {
 export function ChangePassword({ pwdNumber, oldPassword, onChanged }: Props) {
 	const [newPassword, setNewPassword] = useState("");
 	const [confirm, setConfirm] = useState("");
+	const [showNew, setShowNew] = useState(false);
+	const [showConfirm, setShowConfirm] = useState(false);
 	const [error, setError] = useState("");
 	const [loading, setLoading] = useState(false);
 
@@ -58,27 +60,53 @@ export function ChangePassword({ pwdNumber, oldPassword, onChanged }: Props) {
 						<label className="block text-xs font-bold text-slate-700 mb-1.5">
 							New Password
 						</label>
-						<input
-							type="password"
-							required
-							minLength={6}
-							value={newPassword}
-							onChange={(e) => setNewPassword(e.target.value)}
-							className="w-full text-xs font-semibold px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-[#0038a8]/20 focus:border-[#0038a8]"
-						/>
+						<div className="relative">
+							<input
+								type={showNew ? "text" : "password"}
+								required
+								minLength={6}
+								value={newPassword}
+								onChange={(e) => setNewPassword(e.target.value)}
+								className="w-full text-xs font-semibold pl-4 pr-11 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-[#0038a8]/20 focus:border-[#0038a8]"
+							/>
+							<button
+								type="button"
+								onClick={() => setShowNew((prev) => !prev)}
+								aria-label={showNew ? "Hide password" : "Show password"}
+								className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer">
+								{showNew ? (
+									<EyeOff className="w-4 h-4" />
+								) : (
+									<Eye className="w-4 h-4" />
+								)}
+							</button>
+						</div>
 					</div>
 					<div>
 						<label className="block text-xs font-bold text-slate-700 mb-1.5">
 							Confirm Password
 						</label>
-						<input
-							type="password"
-							required
-							minLength={6}
-							value={confirm}
-							onChange={(e) => setConfirm(e.target.value)}
-							className="w-full text-xs font-semibold px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-[#0038a8]/20 focus:border-[#0038a8]"
-						/>
+						<div className="relative">
+							<input
+								type={showConfirm ? "text" : "password"}
+								required
+								minLength={6}
+								value={confirm}
+								onChange={(e) => setConfirm(e.target.value)}
+								className="w-full text-xs font-semibold pl-4 pr-11 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-[#0038a8]/20 focus:border-[#0038a8]"
+							/>
+							<button
+								type="button"
+								onClick={() => setShowConfirm((prev) => !prev)}
+								aria-label={showConfirm ? "Hide password" : "Show password"}
+								className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer">
+								{showConfirm ? (
+									<EyeOff className="w-4 h-4" />
+								) : (
+									<Eye className="w-4 h-4" />
+								)}
+							</button>
+						</div>
 					</div>
 
 					{error && (
