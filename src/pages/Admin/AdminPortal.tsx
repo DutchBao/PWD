@@ -29,6 +29,8 @@ export function AdminPortalController() {
 
 	const handleLoginSuccess = (userData: AdminUser) => {
 		setUser(userData);
+		// Push a state into browser history when logged in
+		window.history.pushState({ adminLoggedIn: true }, "");
 		try {
 			sessionStorage.setItem(SESSION_KEY, JSON.stringify(userData));
 		} catch {
@@ -46,6 +48,24 @@ export function AdminPortalController() {
 			/* ignore */
 		}
 	};
+
+	// Listen for browser navigation (Back/Forward buttons)
+	useEffect(() => {
+		if (!isAuthenticated) return;
+
+		// Push initial state to trap back button navigation if user was restored from session
+		window.history.pushState({ adminLoggedIn: true }, "");
+
+		const handlePopState = () => {
+			// When back button is pressed, log out the user
+			handleLogout();
+		};
+
+		window.addEventListener("popstate", handlePopState);
+		return () => {
+			window.removeEventListener("popstate", handlePopState);
+		};
+	}, [isAuthenticated]);
 
 	useEffect(() => {
 		const verify = (session: Session | null) => {
