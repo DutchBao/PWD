@@ -117,6 +117,9 @@ export function ApplicationsWorkflow() {
 				`Approved as ${data.pwdNumber}, but the confirmation email failed to send.`,
 			);
 		}
+		if (!data.smsSent) {
+			alert("Approved, but the SMS notification failed to send.");
+		}
 	};
 
 	const rejectApplication = async (id: number) => {
@@ -146,6 +149,9 @@ export function ApplicationsWorkflow() {
 
 		if (!data.emailSent) {
 			alert("Rejected, but the notification email failed to send.");
+		}
+		if (!data.smsSent) {
+			alert("Rejected, but the SMS notification failed to send.");
 		}
 	};
 
