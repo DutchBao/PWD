@@ -132,7 +132,6 @@ export function MerchantPage({ onLogout }: MerchantPageProps) {
 				{ facingMode: "environment" },
 				{
 					fps: 10,
-					aspectRatio: 4 / 3,
 					qrbox: (viewfinderWidth, viewfinderHeight) => {
 						const size = Math.floor(
 							Math.min(viewfinderWidth, viewfinderHeight) * 0.7,
