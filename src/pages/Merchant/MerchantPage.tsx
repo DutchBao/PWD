@@ -132,15 +132,12 @@ export function MerchantPage({ onLogout }: MerchantPageProps) {
 				{ facingMode: "environment" },
 				{
 					fps: 10,
+					aspectRatio: 4 / 3,
 					qrbox: (viewfinderWidth, viewfinderHeight) => {
 						const size = Math.floor(
 							Math.min(viewfinderWidth, viewfinderHeight) * 0.7,
 						);
 						return { width: size, height: size };
-					},
-					videoConstraints: {
-						facingMode: "environment",
-						aspectRatio: { ideal: 4 / 3 },
 					},
 				},
 				(decodedText) => {
@@ -196,7 +193,7 @@ export function MerchantPage({ onLogout }: MerchantPageProps) {
 					</div>
 
 					{scanning && !lastResult && (
-						<div className="relative aspect-4/3 w-full rounded-xl overflow-hidden bg-foreground">
+						<div className="aspect-4/3 bg-foreground rounded-xl overflow-hidden relative">
 							<div id={SCANNER_ELEMENT_ID} className="w-full h-full" />
 						</div>
 					)}
@@ -333,6 +330,13 @@ export function MerchantPage({ onLogout }: MerchantPageProps) {
 					</span>
 				</div>
 			</div>
+
+			<style>{`
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes scaleUp { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+        .animate-fadeIn { animation: fadeIn 0.25s ease-out forwards; }
+        .animate-scaleUp { animation: scaleUp 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+      `}</style>
 		</div>
 	);
 }
