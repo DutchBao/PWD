@@ -207,7 +207,7 @@ export function HomePage() {
 							</p>
 						</div>
 						<a
-							href="#apply"
+							href="/Register"
 							className="text-primary text-xs font-bold flex items-center space-x-1.5 group-hover:underline">
 							<span>Apply Now</span>
 							<span>→</span>
@@ -249,7 +249,7 @@ export function HomePage() {
 							</p>
 						</div>
 						<a
-							href="#scanner"
+							href="/Scanner"
 							className="text-primary text-xs font-bold flex items-center space-x-1.5 group-hover:underline">
 							<span>Open Scanner</span>
 							<span>→</span>
@@ -283,7 +283,7 @@ export function HomePage() {
 							</p>
 						</div>
 						<a
-							href="#admin"
+							href="/Admin"
 							className="text-primary text-xs font-bold flex items-center space-x-1.5 group-hover:underline">
 							<span>Admin Portal</span>
 							<span>→</span>

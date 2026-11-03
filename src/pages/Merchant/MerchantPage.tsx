@@ -130,7 +130,16 @@ export function MerchantPage({ onLogout }: MerchantPageProps) {
 		scanner
 			.start(
 				{ facingMode: "environment" },
-				{ fps: 10, qrbox: { width: 250, height: 250 } },
+				{
+					fps: 10,
+					aspectRatio: 4 / 3,
+					qrbox: (viewfinderWidth, viewfinderHeight) => {
+						const size = Math.floor(
+							Math.min(viewfinderWidth, viewfinderHeight) * 0.7,
+						);
+						return { width: size, height: size };
+					},
+				},
 				(decodedText) => {
 					if (handledRef.current) return;
 					handledRef.current = true;
