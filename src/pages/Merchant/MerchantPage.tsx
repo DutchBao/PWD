@@ -332,11 +332,27 @@ export function MerchantPage({ onLogout }: MerchantPageProps) {
 			</div>
 
 			<style>{`
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes scaleUp { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
-        .animate-fadeIn { animation: fadeIn 0.25s ease-out forwards; }
-        .animate-scaleUp { animation: scaleUp 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-      `}</style>
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes scaleUp { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+  .animate-fadeIn { animation: fadeIn 0.25s ease-out forwards; }
+  .animate-scaleUp { animation: scaleUp 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+  /* Fill container and clip overflow */
+  #qr-scanner-region {
+    width: 100% !important;
+    height: 100% !important;
+    overflow: hidden !important;
+    border: none !important;
+  }
+
+  /* Force video element to fill container edge-to-edge */
+  #qr-scanner-region video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    border-radius: inherit;
+  }
+`}</style>
 		</div>
 	);
 }
